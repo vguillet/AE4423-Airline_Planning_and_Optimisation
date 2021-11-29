@@ -124,7 +124,12 @@ class Network:
         return network_nodes
 
     def solve_network_edges(self):
-        network_edges_dict = {"len": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst)))}
+        network_edges_dict = {"len": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
+                              "AC 1": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
+                              "AC 2": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
+                              "AC 3": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
+                              "AC 4": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
+                              "AC 5": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst)))}
 
         # -> Solving for edge values
         for node_id in range(len(self.network_nodes_lst)):
@@ -134,12 +139,22 @@ class Network:
                 if other_node == node_id:
                     continue
                 else:
-                    network_edges_dict["len"][node_id, other_node] = \
+                    edge_len = \
                         haversine((self.network_nodes_lst[node_id]["lat"],
                                    self.network_nodes_lst[node_id]["lon"]),
                                   (self.network_nodes_lst[other_node]["lat"],
                                    self.network_nodes_lst[other_node]["lon"])
                                   )[1]
+
+                    network_edges_dict["len"][node_id, other_node] = edge_len
+
+                    # -> Solving for air path viability for each aircraft type
+                    for aircraft_type, value in self.ac_dict.items():
+                        if value["max range"] >= edge_len:
+                            network_edges_dict[aircraft_type][node_id, other_node] = 1
+
+                        else:
+                            pass
 
         return network_edges_dict
 
