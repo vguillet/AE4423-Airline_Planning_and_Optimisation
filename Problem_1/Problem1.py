@@ -120,6 +120,6 @@ for i, airport_i in enumerate(airports):
             D[i,j] = k*(data[airport_i]['Population']*data[airport_j]['Population'])**b1/(f*d[i,j])**b2
 
 D_df = pd.DataFrame(D,airports,airports)
-print('Demand:')
+print('---------------- Demand Forcast: -----------------')
 print(D_df)
-D_df.to_csv('Demand_forecast.csv')
+D_df.to_csv('Problem_1/Demand_forecast.csv')
