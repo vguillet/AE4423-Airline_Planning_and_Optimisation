@@ -60,8 +60,8 @@ def demand_forcast(ijs,k,b1,b2):
         Dij.append(k*(pop_i*pop_j)**b1/(f*dij)**b2)
     return Dij
 
-def log_demand_forcast(ijs,k,b1,b2):
-    '''formula to calcuate demand'''
+def demand_forcast_log(ijs, k, b1, b2):
+    '''formula to calcuate log of demand'''
     Dij = []
     for ij in ijs:
         i=int(ij[0])
@@ -98,17 +98,28 @@ y_data_log = log(y_data)
 
 # find optimal solution using Scipy that uses least squares as cost
 popt, pcov = opt.curve_fit(demand_forcast,x_data,y_data)
-popt_log, pcov_log = opt.curve_fit(log_demand_forcast,x_data,y_data_log)
+popt_log, pcov_log = opt.curve_fit(demand_forcast_log, x_data, y_data_log)
+
+
 
 '''Debug'''
 perr_lin = sqrt(np.diag(pcov))
 perr_log = sqrt(np.diag(pcov_log))
 
 for i , name in enumerate(['k','b1','b2']):
-    print(f'optimal {name}_lin = {popt[i]} +- {perr_lin[i]},   {name}_log = {popt_log[i]} +- {perr_log[i]}')
+    print(f'optimal {name}_lin = {round(popt[i],3)} +- {round(perr_lin[i],3)},   {name}_log = {round(popt_log[i],3)} +- {round(perr_log[i],3)}')
+k = popt_log[0]
+b1 = popt_log[1]
+b2 = popt_log[2]
 
+D = np.zeros(d.shape)
+for i, airport_i in enumerate(airports):
+    for j, airport_j in enumerate(airports):
+        if i!=j:
+            # print(k*(data[airport_i]['Population']*data[airport_j]['Population'])**b1/(f*d[i,j])**b2)
+            D[i,j] = k*(data[airport_i]['Population']*data[airport_j]['Population'])**b1/(f*d[i,j])**b2
 
-y_calc = demand_forcast(x_data,popt[0],popt[1],popt[2])
-y_calc_log = exp(log_demand_forcast(x_data,popt_log[0],popt_log[1],popt_log[2]))
-for i in range(len(y_data)):
-    print(f'given demand 2020: {y[i]},    with annual growth: {round(y_data[i],3)},    optimal gravity model: {round(y_calc[i],3)},    optimal gravity_log model: {round(y_calc_log[i],3)}')
+D_df = pd.DataFrame(D,airports,airports)
+print('Demand:')
+print(D_df)
+D_df.to_csv('Demand_forecast.csv')
