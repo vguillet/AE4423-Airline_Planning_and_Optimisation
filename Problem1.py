@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from numpy import cos, sin, arcsin, sqrt
+from numpy import cos, sin, arcsin, sqrt, log, exp
 import scipy.optimize as opt
 
 
@@ -60,6 +60,18 @@ def demand_forcast(ijs,k,b1,b2):
         Dij.append(k*(pop_i*pop_j)**b1/(f*dij)**b2)
     return Dij
 
+def log_demand_forcast(ijs,k,b1,b2):
+    '''formula to calcuate demand'''
+    Dij = []
+    for ij in ijs:
+        i=int(ij[0])
+        j=int(ij[1])
+        pop_i = data[airports[i]]['Population']
+        pop_j = data[airports[j]]['Population']
+        dij = d[i,j]
+        Dij.append(k*(pop_i*pop_j)**b1/(f*dij)**b2)
+    return log(Dij)
+
 
 # find the matches in the given demand_2020 data and the airport data,
 # and save both the index of the airport in data, as well as the ICAO code
@@ -78,20 +90,25 @@ for i in matches:
         if i[0] != j[0]:
             x_data.append(np.array([i[0],j[0]]))
             y.append(demand_2020[i[1]][j[1]])
-            y_data.append(demand_2020[i[1]][j[1]] * (1 + annual_growth) ** 10)
 
+x_data = np.array(x_data)
+y = np.array(y)
+y_data = y*(annual_growth+1)**10
+y_data_log = log(y_data)
 
 # find optimal solution using Scipy that uses least squares as cost
-popt, pcov2 = opt.curve_fit(demand_forcast,x_data,y_data)
+popt, pcov = opt.curve_fit(demand_forcast,x_data,y_data)
+popt_log, pcov_log = opt.curve_fit(log_demand_forcast,x_data,y_data_log)
 
 '''Debug'''
+perr_lin = sqrt(np.diag(pcov))
+perr_log = sqrt(np.diag(pcov_log))
+
 for i , name in enumerate(['k','b1','b2']):
-    print(f'optimal {name} = {popt[i]}')
+    print(f'optimal {name}_lin = {popt[i]} +- {perr_lin[i]},   {name}_log = {popt_log[i]} +- {perr_log[i]}')
+
 
 y_calc = demand_forcast(x_data,popt[0],popt[1],popt[2])
+y_calc_log = exp(log_demand_forcast(x_data,popt_log[0],popt_log[1],popt_log[2]))
 for i in range(len(y_data)):
-    print(f'given demand 2020: {y[i]},    with annual growth: {round(y_data[i],3)},    optimal gravity model: {round(y_calc[i],3)}')
-
-
-
-
+    print(f'given demand 2020: {y[i]},    with annual growth: {round(y_data[i],3)},    optimal gravity model: {round(y_calc[i],3)},    optimal gravity_log model: {round(y_calc_log[i],3)}')
