@@ -69,7 +69,7 @@ class Model:
                     # ... for each aircraft type
                     for aircraft in self.network.ac_dict.values():
                         objective_function += aircraft["yield per RPK"] \
-                                              *
+                                              * self.network.route
                                               + self.decision_variable_dict[]
 
         # --> Setting objective

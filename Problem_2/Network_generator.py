@@ -41,7 +41,7 @@ class Network:
                                               ["total operating cost"],
                                               ["yield per RPK"]}}
 
-        - self.edges_df is a dataframe containing the length of each route
+        - self.routes_df is a dataframe containing the length of each route
         - self.traffic is a dataframe containing the amount of traffic for each route
 
         All dataframes are indexed using the airports ICAO codes for convenience
@@ -54,14 +54,14 @@ class Network:
         self.airports_lst = self.import_network_airports()
 
         # -> Solve for network edge properties
-        self.edges_df = self.solve_network_routes()
+        self.routes_df = self.solve_network_routes()
 
         # -> Import network traffic
         self.traffic_df = self.import_network_traffic()
 
         print(self.ac_dict)
         print(self.airports_lst)
-        print(self.edges_df)
+        print(self.routes_df)
         print(self.traffic_df)
 
     @staticmethod
