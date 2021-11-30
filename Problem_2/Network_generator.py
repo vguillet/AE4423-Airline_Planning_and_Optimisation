@@ -13,10 +13,10 @@ class Network:
         """
         Data structure:"
 
-        - self.nodes_lst contains all the airports with their respective properties
+        - self.airports_lst contains all the airports with their respective properties
         (they are stored as dictionaries in a list to make iterating through them easier)
 
-            self.nodes_lst = [{["ref"], ["lat"], ["lon"], ["runway"], ["runway compatibility lst"]}]
+            self.airports_lst = [{["ref"], ["lat"], ["lon"], ["runway"], ["runway compatibility lst"]}]
 
             Note: "runway compatibility lst" is a list of lists, with item 0 : aircraft ref
                                                                       item 1 : compatible (binary)
@@ -41,26 +41,26 @@ class Network:
                                               ["total operating cost"],
                                               ["yield per RPK"]}}
 
-        - self.edge_df is a dataframe containing the length of each route
+        - self.edges_df is a dataframe containing the length of each route
         - self.traffic is a dataframe containing the amount of traffic for each route
 
         All dataframes are indexed using the airports ICAO codes for convenience
-        (which can be obtained using the key "ref" on objects in the self.nodes_lst list)
+        (which can be obtained using the key "ref" on objects in the self.airports_lst list)
         """
         # -> Setup aircraft dict
         self.ac_dict = self.create_aircraft_dict()
 
         # -> Import network nodes
-        self.nodes_lst = self.import_network_nodes()
+        self.airports_lst = self.import_network_airports()
 
         # -> Solve for network edge properties
-        self.edges_df = self.solve_network_edges()
+        self.edges_df = self.solve_network_routes()
 
         # -> Import network traffic
         self.traffic_df = self.import_network_traffic()
 
         print(self.ac_dict)
-        print(self.nodes_lst)
+        print(self.airports_lst)
         print(self.edges_df)
         print(self.traffic_df)
 
@@ -132,7 +132,7 @@ class Network:
                          "batteries energy": 8216}
                 }
 
-    def import_network_nodes(self):
+    def import_network_airports(self):
         df = pd.read_csv("Destination_coordinates.csv")
 
         # -> Reshape data
@@ -149,7 +149,7 @@ class Network:
         df["Runway (m)"] = pd.to_numeric(df["Runway (m)"])
 
         # -> Create a node per destination
-        network_nodes = []
+        airports_lst = []
 
         # -> Solving for runway viability for each aircraft type
         for index, row in df.iterrows():
@@ -162,13 +162,13 @@ class Network:
                 else:
                     runway_compatibility_lst.append([aircraft_type, 0])
 
-            network_nodes.append({"ref": row["ICAO Code"],
+            airports_lst.append({"ref": row["ICAO Code"],
                                   "lat": row["Latitude (deg)"],
                                   "lon": row["Longitude (deg)"],
                                   "runway": row["Runway (m)"],
                                   "runway compatibility lst": runway_compatibility_lst})
 
-        return network_nodes
+        return airports_lst
 
     @staticmethod
     def import_network_traffic():
@@ -177,12 +177,12 @@ class Network:
 
         return df
 
-    def solve_network_edges(self):
+    def solve_network_routes(self):
         # -> Create network edge dataframe
-        edges_df = pd.DataFrame(0, index=np.arange(len(self.nodes_lst)), columns=np.arange(len(self.nodes_lst)))
+        edges_df = pd.DataFrame(0, index=np.arange(len(self.airports_lst)), columns=np.arange(len(self.airports_lst)))
 
-        edges_df.columns = list(node["ref"] for node in self.nodes_lst)
-        edges_df = edges_df.reindex(index=list(node["ref"] for node in self.nodes_lst), fill_value=0)
+        edges_df.columns = list(node["ref"] for node in self.airports_lst)
+        edges_df = edges_df.reindex(index=list(node["ref"] for node in self.airports_lst), fill_value=0)
 
         # -> Create network edge properties per aircraft
         for aircraft in self.ac_dict.values():
@@ -192,47 +192,47 @@ class Network:
             aircraft["yield per RPK"] = deepcopy(edges_df)
 
         # -> Create network edge len df
-        edges_len_df = deepcopy(edges_df)
+        routes_len_df = deepcopy(edges_df)
 
         # -> Solving for edge values
-        for node in self.nodes_lst:
+        for airport_i in self.airports_lst:
             # -> Solving for distance between nodes using haversine equation
-            for other_node in self.nodes_lst:
-                if other_node == node:
+            for airport_j in self.airports_lst:
+                if airport_j == airport_i:
                     continue
                 else:
-                    edge_len = \
-                        haversine((node["lat"], node["lon"]), (other_node["lat"], other_node["lon"]))[1]
+                    route_len = \
+                        haversine((airport_i["lat"], airport_i["lon"]), (airport_j["lat"], airport_j["lon"]))[1]
 
-                    edges_len_df.loc[node["ref"], other_node["ref"]] = edge_len
+                    routes_len_df.loc[airport_i["ref"], airport_j["ref"]] = route_len
 
                     # -> Solving for edge property for each aircraft type
                     for aircraft in self.ac_dict.values():
-                        if aircraft["max range"] >= edge_len:
+                        if aircraft["max range"] >= route_len:
                             # -> Mark edge as viable
-                            aircraft["viability"].loc[node["ref"], other_node["ref"]] = 1
+                            aircraft["viability"].loc[airport_i["ref"], airport_j["ref"]] = 1
 
                             # -> Solve for trip duration
                             # aircraft["duration"].loc[node["ref"], other_node["ref"]] = edge_len / aircraft["speed"]
 
                             # -> Solve for edge total cost
-                            time_cost = aircraft["time cost parameter"] * (edge_len/aircraft["speed"])
+                            time_cost = aircraft["time cost parameter"] * (route_len/aircraft["speed"])
 
-                            fuel_cost = (aircraft["fuel cost parameter"]*1.42)/1.5 * edge_len
+                            fuel_cost = (aircraft["fuel cost parameter"]*1.42)/1.5 * route_len
 
-                            energy_cost = 0.07 * aircraft["batteries energy"] * edge_len/aircraft["max range"]
+                            energy_cost = 0.07 * aircraft["batteries energy"] * route_len/aircraft["max range"]
 
-                            aircraft["total operating cost"].loc[node["ref"], other_node["ref"]] = \
+                            aircraft["total operating cost"].loc[airport_i["ref"], airport_j["ref"]] = \
                                 aircraft["fixed operating cost"] + time_cost + fuel_cost + energy_cost
 
                             # Solve for edge yield per passenger
-                            aircraft["yield per RPK"].loc[node["ref"], other_node["ref"]] = \
-                                5.9*edge_len**(-0.76) + 0.043
+                            aircraft["yield per RPK"].loc[airport_i["ref"], airport_j["ref"]] = \
+                                5.9*route_len**(-0.76) + 0.043
 
                         else:
                             pass
 
-        return edges_len_df
+        return routes_len_df
 
 
 if __name__ == "__main__":

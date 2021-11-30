@@ -59,17 +59,18 @@ class Model:
         objective_function = gp.LinExpr()
 
         # --> Adding decision variables
-        # ... for each network edge
-        for node in self.network.nodes_lst:
-            for other_node in self.network.nodes_lst:
+        # ... for each airport i
+        for node in self.network.airports_lst:
+            # ... for each airport j
+            for other_node in self.network.airports_lst:
                 if other_node == node:
                     continue
                 else:
                     # ... for each aircraft type
-                    for aircraft_type, aircraft in self.network.ac_dict.items():
-
-
-            objective_function += self.decision_variable_dict[]
+                    for aircraft in self.network.ac_dict.values():
+                        objective_function += aircraft["yield per RPK"] \
+                                              *
+                                              + self.decision_variable_dict[]
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)
