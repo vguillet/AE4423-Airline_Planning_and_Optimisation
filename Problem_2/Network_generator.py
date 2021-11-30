@@ -11,6 +11,43 @@ from RPK_function import eur_yield
 
 class Network:
     def __init__(self):
+        """
+        Data structure:"
+
+        - self.nodes_lst contains all the airports with their respective properties
+        (they are stored as dictionaries in a list to make iterating through them easier)
+
+            self.nodes_lst = [{["ref"], ["lat"], ["lon"], ["runway"], ["runway compatibility lst"]}]
+
+            Note: "runway compatibility lst" is a list of lists, with item 0 : aircraft ref
+                                                                      item 1 : compatible (binary)
+
+        - self.ac_dict contains all the aircraft types and their respective properties.
+        It is a double nested dictionary with aircraft type are the keys to l1, and properties as l2 keys.
+
+            self.ac_dict = {[aircraft type]: {["speed"],
+                                              ["seats"],
+                                              ["avg TAT"],
+                                              ["extra charging time"],
+                                              ["max range"],
+                                              ["runway req"],
+
+                                              ["weekly lease cost"],
+                                              ["fixed operating cost"],
+                                              ["time cost parameter"],
+                                              ["fuel cost parameter"],
+                                              ["batteries energy"],
+
+                                              ["viability"],
+                                              ["total operating cost"],
+                                              ["yield per RPK"]}}
+
+        - self.edge_df is a dataframe containing the length of each route
+        - self.traffic is a dataframe containing the amount of traffic for each route
+
+        All dataframes are indexed using the airports ICAO codes for convenience
+        (which can be obtained using the key "ref" on objects in the self.nodes_lst list)
+        """
         # -> Setup aircraft dict
         self.ac_dict = self.create_aircraft_dict()
 
@@ -18,14 +55,15 @@ class Network:
         self.nodes_lst = self.import_network_nodes()
 
         # -> Solve for network edge properties
-        self.edges_dict = self.solve_network_edges()
+        self.edges_df = self.solve_network_edges()
 
         # -> Import network traffic
-        self.traffic = self.import_network_traffic()
+        self.traffic_df = self.import_network_traffic()
 
-        print(self.nodes_lst)
         print(self.ac_dict)
-        print(self.traffic)
+        print(self.nodes_lst)
+        print(self.edges_df)
+        print(self.traffic_df)
 
     @staticmethod
     def create_aircraft_dict():
@@ -118,12 +156,12 @@ class Network:
         for index, row in df.iterrows():
             runway_compatibility_lst = []
 
-            for aircraft_type, value in self.ac_dict.items():
-                if value["runway req"] <= row["Runway (m)"]:
-                    runway_compatibility_lst.append(1)
+            for aircraft_type, aircraft in self.ac_dict.items():
+                if aircraft["runway req"] <= row["Runway (m)"]:
+                    runway_compatibility_lst.append([aircraft_type, 1])
 
                 else:
-                    runway_compatibility_lst.append(0)
+                    runway_compatibility_lst.append([aircraft_type, 0])
 
             network_nodes.append({"ref": row["ICAO Code"],
                                   "lat": row["Latitude (deg)"],
