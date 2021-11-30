@@ -47,6 +47,11 @@ class Network:
         All dataframes are indexed using the airports ICAO codes for convenience
         (which can be obtained using the key "ref" on objects in the self.airports_lst list)
         """
+
+        # -> Set Network hub
+        self.hub = "Malmö"
+        self.hub_ref = "ESMS"
+
         # -> Setup aircraft dict
         self.ac_dict = self.create_aircraft_dict()
 
@@ -216,14 +221,22 @@ class Network:
                             # aircraft["duration"].loc[node["ref"], other_node["ref"]] = edge_len / aircraft["speed"]
 
                             # -> Solve for edge total cost
+                            fixed_operating_cost = aircraft["fixed operating cost"]
+
                             time_cost = aircraft["time cost parameter"] * (route_len/aircraft["speed"])
 
                             fuel_cost = (aircraft["fuel cost parameter"]*1.42)/1.5 * route_len
 
                             energy_cost = 0.07 * aircraft["batteries energy"] * route_len/aircraft["max range"]
 
-                            aircraft["total operating cost"].loc[airport_i["ref"], airport_j["ref"]] = \
-                                aircraft["fixed operating cost"] + time_cost + fuel_cost + energy_cost
+                            if airport_i == self.hub_ref or airport_j == self.hub_ref:
+                                # fixed_operating_cost + time_cost + fuel_cost are 30% cheaper if departing/arrival airport is hub
+                                aircraft["total operating cost"].loc[airport_i["ref"], airport_j["ref"]] = \
+                                    (fixed_operating_cost + time_cost + fuel_cost) * 0.7 + energy_cost
+
+                            else:
+                                aircraft["total operating cost"].loc[airport_i["ref"], airport_j["ref"]] = \
+                                    (fixed_operating_cost + time_cost + fuel_cost) + energy_cost
 
                             # Solve for edge yield per passenger
                             aircraft["yield per RPK"].loc[airport_i["ref"], airport_j["ref"]] = \
