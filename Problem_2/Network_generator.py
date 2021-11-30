@@ -6,7 +6,6 @@ import sys
 from copy import deepcopy
 
 from Haversine_function import haversine
-from RPK_function import eur_yield
 
 
 class Network:
@@ -180,20 +179,20 @@ class Network:
 
     def solve_network_edges(self):
         # -> Create network edge dataframe
-        edges = pd.DataFrame(0, index=np.arange(len(self.nodes_lst)), columns=np.arange(len(self.nodes_lst)))
+        edges_df = pd.DataFrame(0, index=np.arange(len(self.nodes_lst)), columns=np.arange(len(self.nodes_lst)))
 
-        edges.columns = list(node["ref"] for node in self.nodes_lst)
-        edges = edges.reindex(index=list(node["ref"] for node in self.nodes_lst), fill_value=0)
+        edges_df.columns = list(node["ref"] for node in self.nodes_lst)
+        edges_df = edges_df.reindex(index=list(node["ref"] for node in self.nodes_lst), fill_value=0)
 
         # -> Create network edge properties per aircraft
-        for aircraft_type in self.ac_dict:
-            self.ac_dict[aircraft_type]["viability"] = deepcopy(edges)
+        for aircraft in self.ac_dict.values():
+            aircraft["viability"] = deepcopy(edges_df)
             # self.ac_dict[aircraft_type]["duration"] = deepcopy(edges)
-            self.ac_dict[aircraft_type]["total operating cost"] = deepcopy(edges)
-            self.ac_dict[aircraft_type]["yield per RPK"] = deepcopy(edges)
+            aircraft["total operating cost"] = deepcopy(edges_df)
+            aircraft["yield per RPK"] = deepcopy(edges_df)
 
         # -> Create network edge len df
-        edges_len = deepcopy(edges)
+        edges_len_df = deepcopy(edges_df)
 
         # -> Solving for edge values
         for node in self.nodes_lst:
@@ -205,10 +204,10 @@ class Network:
                     edge_len = \
                         haversine((node["lat"], node["lon"]), (other_node["lat"], other_node["lon"]))[1]
 
-                    edges_len.loc[node["ref"], other_node["ref"]] = edge_len
+                    edges_len_df.loc[node["ref"], other_node["ref"]] = edge_len
 
                     # -> Solving for edge property for each aircraft type
-                    for aircraft_type, aircraft in self.ac_dict.items():
+                    for aircraft in self.ac_dict.values():
                         if aircraft["max range"] >= edge_len:
                             # -> Mark edge as viable
                             aircraft["viability"].loc[node["ref"], other_node["ref"]] = 1
@@ -233,7 +232,7 @@ class Network:
                         else:
                             pass
 
-        return edges
+        return edges_len_df
 
 
 if __name__ == "__main__":

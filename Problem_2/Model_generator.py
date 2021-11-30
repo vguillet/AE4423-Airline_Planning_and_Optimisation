@@ -25,6 +25,7 @@ class Model:
         self.network = network
 
         self.decision_variable_dict = {"x": {},
+                                       "w": {},
                                        "Included": {},
                                        "Not_included": {}}
 
@@ -57,12 +58,18 @@ class Model:
         # --> Initiating objective function linear expression
         objective_function = gp.LinExpr()
 
-        # --> Adding decision variables for each each aircraft type and each network edge
-        for node_id in range(len(self.network.nodes_lst)):
+        # --> Adding decision variables
+        # ... for each network edge
+        for node in self.network.nodes_lst:
+            for other_node in self.network.nodes_lst:
+                if other_node == node:
+                    continue
+                else:
+                    # ... for each aircraft type
+                    for aircraft_type, aircraft in self.network.ac_dict.items():
 
-            # -> Solving for distance between nodes using haversine equation
-            for other_node in range(len(self.nodes_lst)):
-                return
+
+            objective_function += self.decision_variable_dict[]
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)
