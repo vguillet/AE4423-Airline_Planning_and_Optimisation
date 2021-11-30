@@ -60,17 +60,18 @@ class Model:
 
         # --> Adding decision variables
         # ... for each airport i
-        for node in self.network.airports_lst:
+        for airport_i in self.network.airports_lst:
             # ... for each airport j
-            for other_node in self.network.airports_lst:
-                if other_node == node:
+            for airport_j in self.network.airports_lst:
+                if airport_j == airport_i:
                     continue
                 else:
                     # ... for each aircraft type
                     for aircraft in self.network.ac_dict.values():
                         objective_function += aircraft["yield per RPK"] \
-                                              * self.network.route
-                                              + self.decision_variable_dict[]
+                                              * self.network.distances_df.loc[airport_i["ref"], airport_j["ref"]] \
+                                              * (self.decision_variable_dict["x"][airport_i["ref"]][airport_j["ref"]]
+                                              + sum())
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)
