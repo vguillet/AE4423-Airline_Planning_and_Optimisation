@@ -35,6 +35,15 @@ class Model:
         self.model.Params.OutputFlag = 1
 
         # --> Setting up constraints
+        # Demand constraint
+
+        # Flow constraint
+
+        # Aircraft utilisation constraint
+
+        # Aircraft allocation constraints
+
+        # Fleet budget constraint
 
         # --> Building objective function
 
@@ -44,6 +53,20 @@ class Model:
 
         :return: None
         """
+
+        # --> Initiating objective function linear expression
+        objective_function = gp.LinExpr()
+
+        # --> Adding decision variables for each each aircraft type and each network edge
+        for node_id in range(len(self.network.nodes_lst)):
+
+            # -> Solving for distance between nodes using haversine equation
+            for other_node in range(len(self.nodes_lst)):
+                return
+
+        # --> Setting objective
+        self.model.setObjective(objective_function, GRB.MAXIMIZE)
+
         return
 
     def build__constraints(self):

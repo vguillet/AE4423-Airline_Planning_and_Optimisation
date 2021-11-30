@@ -2,7 +2,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from math import sqrt
+import sys
+from copy import deepcopy
+
 from Haversine_function import haversine
+from RPK_function import eur_yield
 
 
 class Network:
@@ -11,11 +15,17 @@ class Network:
         self.ac_dict = self.create_aircraft_dict()
 
         # -> Import network nodes
-        self.network_nodes_lst = self.import_network_nodes()
-        print(self.network_nodes_lst)
+        self.nodes_lst = self.import_network_nodes()
 
-        self.network_edges_dict = self.solve_network_edges()
-        print(self.network_edges_dict)
+        # -> Solve for network edge properties
+        self.edges_dict = self.solve_network_edges()
+
+        # -> Import network traffic
+        self.traffic = self.import_network_traffic()
+
+        print(self.nodes_lst)
+        print(self.ac_dict)
+        print(self.traffic)
 
     @staticmethod
     def create_aircraft_dict():
@@ -104,8 +114,8 @@ class Network:
         # -> Create a node per destination
         network_nodes = []
 
+        # -> Solving for runway viability for each aircraft type
         for index, row in df.iterrows():
-            # -> Solving for runway viability for each aircraft type
             runway_compatibility_lst = []
 
             for aircraft_type, value in self.ac_dict.items():
@@ -123,40 +133,69 @@ class Network:
 
         return network_nodes
 
+    @staticmethod
+    def import_network_traffic():
+        df = pd.read_csv("Demand_per_week.csv", header=[0])
+        df = df.set_index("Unnamed: 0")
+
+        return df
+
     def solve_network_edges(self):
-        network_edges_dict = {"len": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
-                              "AC 1": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
-                              "AC 2": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
-                              "AC 3": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
-                              "AC 4": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst))),
-                              "AC 5": np.zeros((len(self.network_nodes_lst), len(self.network_nodes_lst)))}
+        # -> Create network edge dataframe
+        edges = pd.DataFrame(0, index=np.arange(len(self.nodes_lst)), columns=np.arange(len(self.nodes_lst)))
+
+        edges.columns = list(node["ref"] for node in self.nodes_lst)
+        edges = edges.reindex(index=list(node["ref"] for node in self.nodes_lst), fill_value=0)
+
+        # -> Create network edge properties per aircraft
+        for aircraft_type in self.ac_dict:
+            self.ac_dict[aircraft_type]["viability"] = deepcopy(edges)
+            # self.ac_dict[aircraft_type]["duration"] = deepcopy(edges)
+            self.ac_dict[aircraft_type]["total operating cost"] = deepcopy(edges)
+            self.ac_dict[aircraft_type]["yield per RPK"] = deepcopy(edges)
+
+        # -> Create network edge len df
+        edges_len = deepcopy(edges)
 
         # -> Solving for edge values
-        for node_id in range(len(self.network_nodes_lst)):
-
+        for node in self.nodes_lst:
             # -> Solving for distance between nodes using haversine equation
-            for other_node in range(len(self.network_nodes_lst)):
-                if other_node == node_id:
+            for other_node in self.nodes_lst:
+                if other_node == node:
                     continue
                 else:
                     edge_len = \
-                        haversine((self.network_nodes_lst[node_id]["lat"],
-                                   self.network_nodes_lst[node_id]["lon"]),
-                                  (self.network_nodes_lst[other_node]["lat"],
-                                   self.network_nodes_lst[other_node]["lon"])
-                                  )[1]
+                        haversine((node["lat"], node["lon"]), (other_node["lat"], other_node["lon"]))[1]
 
-                    network_edges_dict["len"][node_id, other_node] = edge_len
+                    edges_len.loc[node["ref"], other_node["ref"]] = edge_len
 
-                    # -> Solving for air path viability for each aircraft type
-                    for aircraft_type, value in self.ac_dict.items():
-                        if value["max range"] >= edge_len:
-                            network_edges_dict[aircraft_type][node_id, other_node] = 1
+                    # -> Solving for edge property for each aircraft type
+                    for aircraft_type, aircraft in self.ac_dict.items():
+                        if aircraft["max range"] >= edge_len:
+                            # -> Mark edge as viable
+                            aircraft["viability"].loc[node["ref"], other_node["ref"]] = 1
+
+                            # -> Solve for trip duration
+                            # aircraft["duration"].loc[node["ref"], other_node["ref"]] = edge_len / aircraft["speed"]
+
+                            # -> Solve for edge total cost
+                            time_cost = aircraft["time cost parameter"] * (edge_len/aircraft["speed"])
+
+                            fuel_cost = (aircraft["fuel cost parameter"]*1.42)/1.5 * edge_len
+
+                            energy_cost = 0.07 * aircraft["batteries energy"] * edge_len/aircraft["max range"]
+
+                            aircraft["total operating cost"].loc[node["ref"], other_node["ref"]] = \
+                                aircraft["fixed operating cost"] + time_cost + fuel_cost + energy_cost
+
+                            # Solve for edge yield per passenger
+                            aircraft["yield per RPK"].loc[node["ref"], other_node["ref"]] = \
+                                5.9*edge_len**(-0.76) + 0.043
 
                         else:
                             pass
 
-        return network_edges_dict
+        return edges
 
 
 if __name__ == "__main__":
