@@ -52,6 +52,9 @@ class Network:
         self.hub = "Malmö"
         self.hub_ref = "ESMS"
 
+        # -> Set fleet properties
+        self.max_continuous_operation = 10
+
         # -> Setup aircraft dict
         self.ac_dict = self.create_aircraft_dict()
 
@@ -59,7 +62,10 @@ class Network:
         self.airports_lst = self.import_network_airports()
 
         # -> Solve for network edge properties
-        self.distances_df = self.solve_network_properties()
+        self.distances_df = self.solve_network_edges_properties()
+
+        # -> Solve for possible routes
+        self.routes = self.determine_possible_routes()
 
         # -> Import network traffic
         self.traffic_df = self.import_network_traffic()
@@ -67,6 +73,7 @@ class Network:
         print(self.ac_dict)
         print(self.airports_lst)
         print(self.distances_df)
+        print(self.routes)
         print(self.traffic_df)
 
     @staticmethod
@@ -168,21 +175,14 @@ class Network:
                     runway_compatibility_lst.append([aircraft_type, 0])
 
             airports_lst.append({"ref": row["ICAO Code"],
-                                  "lat": row["Latitude (deg)"],
-                                  "lon": row["Longitude (deg)"],
-                                  "runway": row["Runway (m)"],
-                                  "runway compatibility lst": runway_compatibility_lst})
+                                 "lat": row["Latitude (deg)"],
+                                 "lon": row["Longitude (deg)"],
+                                 "runway": row["Runway (m)"],
+                                 "runway compatibility lst": runway_compatibility_lst})
 
         return airports_lst
 
-    @staticmethod
-    def import_network_traffic():
-        df = pd.read_csv("Demand_per_week.csv", header=[0])
-        df = df.set_index("Unnamed: 0")
-
-        return df
-
-    def solve_network_properties(self):
+    def solve_network_edges_properties(self):
         # -> Create network edge dataframe
         edges_df = pd.DataFrame(0, index=np.arange(len(self.airports_lst)), columns=np.arange(len(self.airports_lst)))
 
@@ -246,6 +246,32 @@ class Network:
                             pass
 
         return distances_len_df
+
+    def determine_possible_routes(self):
+        routes = []
+
+        # -> Set single stop routes
+        for airport_1 in self.airports_lst:
+            if airport_1["ref"] == self.hub_ref:
+                continue
+            else:
+                routes.append([self.hub_ref, airport_1["ref"], self.hub_ref])
+
+                # -> Set two stop routes
+                for airport_2 in self.airports_lst:
+                    if airport_2["ref"] == self.hub_ref or airport_2["ref"] == airport_1["ref"]:
+                        continue
+                    else:
+                        routes.append([self.hub_ref, airport_1["ref"], airport_2["ref"], self.hub_ref])
+
+        return routes
+
+    @staticmethod
+    def import_network_traffic():
+        df = pd.read_csv("Demand_per_week.csv", header=[0])
+        df = df.set_index("Unnamed: 0")
+
+        return df
 
 
 if __name__ == "__main__":
