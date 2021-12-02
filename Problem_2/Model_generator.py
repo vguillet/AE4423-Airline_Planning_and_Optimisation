@@ -24,10 +24,7 @@ class Model:
         # -> Setting up records
         self.network = network
 
-        self.decision_variable_dict = {"x": {},
-                                       "w": {},
-                                       "Included": {},
-                                       "Not_included": {}}
+        self.decision_variable_dict = self.setup_decision_variables()
 
         # -> Creating model
         self.model = gp.Model("APO_assignment_model")
@@ -47,6 +44,36 @@ class Model:
         # Fleet budget constraint
 
         # --> Building objective function
+    def setup_decision_variables(self):
+        # Routes: binary list, x: integer list, w: integer list
+        decision_variable_dict = {"AC 1": {"routes": [],
+                                                  "x": [],
+                                                  "w": []},
+                                         "AC 2": {"routes": [],
+                                                  "x": [],
+                                                  "w": []},
+                                         "AC 3": {"routes": [],
+                                                  "x": [],
+                                                  "w": []},
+                                         "AC 4": {"routes": [],
+                                                  "x": [],
+                                                  "w": []},
+                                         "AC 5": {"routes": [],
+                                                  "x": [],
+                                                  "w": []},
+                                  "Included": {},
+                                  "Not_included": {}}
+
+        for aircraft_ref in self.network.ac_dict.keys():
+            decision_variable_dict[aircraft_ref] = {"AC 1": {"routes": [],
+                                                    "x": [],
+                                                    "w": []}
+
+            for route_id in range(len(self.network.routes)):
+                decision_variable_dict[aircraft_ref]
+
+
+        return
 
     def build_objective(self):
         """
