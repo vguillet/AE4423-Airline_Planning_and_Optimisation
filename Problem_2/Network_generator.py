@@ -271,27 +271,31 @@ class Network:
 
             for route_ref, route in routes_dict.items():
                 aircraft["routes"][route_ref] = {"viability": 0,
-                                                 "total operating cost": 0,
-                                                 "duration": 0,
-                                                 "yield per RPK": 0}
+                                                 # "total operating cost": 0,
+                                                 # "duration": 0,
+                                                 # "yield per RPK": 0
+                                                 }
 
                 # -> Checking route viability for aircraft model
                 if aircraft["max range"] >= route["length"]:
                     # -> Mark route as viable
                     aircraft["routes"][route_ref]["viability"] = 1
 
-                    for i in range(len(route["path"])-1):
-                        # -> Solve for route duration
-                        aircraft["routes"][route_ref]["duration"] += \
-                            aircraft["legs"]["duration"].loc[route["path"][i], route["path"][i+1]]
-
-                        # -> Solve for route total cost
-                        aircraft["routes"][route_ref]["total operating cost"] += \
-                            aircraft["legs"]["total operating cost"].loc[route["path"][i], route["path"][i+1]]
-
-                        # Solve for route yield per passenger
-                        aircraft["routes"][route_ref]["yield per RPK"] += \
-                            aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
+                    # for i in range(len(route["path"])-1):
+                    #     # -> Solve for route duration
+                    #     aircraft["routes"][route_ref]["duration"] += \
+                    #         aircraft["legs"]["duration"].loc[route["path"][i], route["path"][i+1]]
+                    #
+                    #     # -> Solve for route total cost
+                    #     # > If current i is hub and not start
+                    #     # if i != 0 and len(route_path) > 3 and route["path"][i] == self.hub_ref:
+                    #
+                    #     aircraft["routes"][route_ref]["total operating cost"] += \
+                    #         aircraft["legs"]["total operating cost"].loc[route["path"][i], route["path"][i+1]]
+                    #
+                    #     # Solve for route yield per passenger
+                    #     aircraft["routes"][route_ref]["yield per RPK"] += \
+                    #         aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
 
         return routes_dict
 
