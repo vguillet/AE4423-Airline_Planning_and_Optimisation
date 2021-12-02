@@ -9,7 +9,7 @@ from Haversine_function import haversine
 
 
 class Network:
-    def __init__(self):
+    def __init__(self, question=0):
         """
         Data structure:"
 
@@ -48,6 +48,12 @@ class Network:
         (which can be obtained using the key "ref" on objects in the self.airports_lst list)
         """
 
+        if question == 0:
+            include_extra = False
+
+        else:
+            include_extra = True
+
         # -> Set Network hub
         self.hub = "Malmö"
         self.hub_ref = "ESMS"
@@ -56,7 +62,7 @@ class Network:
         self.max_continuous_operation = 10
 
         # -> Setup aircraft dict
-        self.ac_dict = self.create_aircraft_dict()
+        self.ac_dict = self.create_aircraft_dict(include_electric_ac=include_extra)
 
         # -> Import network nodes
         self.airports_lst = self.import_network_airports()
@@ -65,78 +71,83 @@ class Network:
         self.distances_df = self.solve_edges_properties()
 
         # -> Solve for possible routes
-        self.routes_dict = self.determine_routes_properties()
+        self.routes_dict = self.determine_routes_properties(include_two_stop_routes=include_extra)
 
         # -> Import network traffic
         self.traffic_df = self.import_network_traffic()
 
     @staticmethod
-    def create_aircraft_dict():
-        return {"AC 1": {"speed": 550,
-                         "seats": 45,
-                         "avg TAT": 25,
-                         "extra charging time": 0,
-                         "max range": 1500,
-                         "runway req": 1400,
+    def create_aircraft_dict(include_electric_ac):
+        fuel_ac = {"AC 1": {"speed": 550,
+                            "seats": 45,
+                            "avg TAT": 25,
+                            "extra charging time": 0,
+                            "max range": 1500,
+                            "runway req": 1400,
 
-                         "weekly lease cost": 15000,
-                         "fixed operating cost": 300,
-                         "time cost parameter": 750,
-                         "fuel cost parameter": 1,
-                         "batteries energy": 0},
+                            "weekly lease cost": 15000,
+                            "fixed operating cost": 300,
+                            "time cost parameter": 750,
+                            "fuel cost parameter": 1,
+                            "batteries energy": 0},
 
-                "AC 2": {"speed": 820,
-                         "seats": 70,
-                         "avg TAT": 35,
-                         "extra charging time": 0,
-                         "max range": 3300,
-                         "runway req": 1600,
+                   "AC 2": {"speed": 820,
+                            "seats": 70,
+                            "avg TAT": 35,
+                            "extra charging time": 0,
+                            "max range": 3300,
+                            "runway req": 1600,
 
-                         "weekly lease cost": 34000,
-                         "fixed operating cost": 600,
-                         "time cost parameter": 775,
-                         "fuel cost parameter": 2,
-                         "batteries energy": 0},
+                            "weekly lease cost": 34000,
+                            "fixed operating cost": 600,
+                            "time cost parameter": 775,
+                            "fuel cost parameter": 2,
+                            "batteries energy": 0},
 
-                "AC 3": {"speed": 850,
-                         "seats": 150,
-                         "avg TAT": 45,
-                         "extra charging time": 0,
-                         "max range": 6300,
-                         "runway req": 1800,
+                   "AC 3": {"speed": 850,
+                            "seats": 150,
+                            "avg TAT": 45,
+                            "extra charging time": 0,
+                            "max range": 6300,
+                            "runway req": 1800,
 
-                         "weekly lease cost": 80000,
-                         "fixed operating cost": 1250,
-                         "time cost parameter": 1400,
-                         "fuel cost parameter": 3.75,
-                         "batteries energy": 0},
+                            "weekly lease cost": 80000,
+                            "fixed operating cost": 1250,
+                            "time cost parameter": 1400,
+                            "fuel cost parameter": 3.75,
+                            "batteries energy": 0}}
 
-                "AC 4": {"speed": 350,
-                         "seats": 20,
-                         "avg TAT": 20,
-                         "extra charging time": 20,
-                         "max range": 400,
-                         "runway req": 750,
+        electric_ac = {"AC 4": {"speed": 350,
+                                "seats": 20,
+                                "avg TAT": 20,
+                                "extra charging time": 20,
+                                "max range": 400,
+                                "runway req": 750,
 
-                         "weekly lease cost": 12000,
-                         "fixed operating cost": 90,
-                         "time cost parameter": 750,
-                         "fuel cost parameter": 0,
-                         "batteries energy": 2130},
+                                "weekly lease cost": 12000,
+                                "fixed operating cost": 90,
+                                "time cost parameter": 750,
+                                "fuel cost parameter": 0,
+                                "batteries energy": 2130},
 
-                "AC 5": {"speed": 480,
-                         "seats": 48,
-                         "avg TAT": 25,
-                         "extra charging time": 45,
-                         "max range": 1000,
-                         "runway req": 950,
+                       "AC 5": {"speed": 480,
+                                "seats": 48,
+                                "avg TAT": 25,
+                                "extra charging time": 45,
+                                "max range": 1000,
+                                "runway req": 950,
 
-                         "weekly lease cost": 22000,
-                         "fixed operating cost": 120,
-                         "time cost parameter": 750,
-                         "fuel cost parameter": 0,
-                         "batteries energy": 8216}
-                }
+                                "weekly lease cost": 22000,
+                                "fixed operating cost": 120,
+                                "time cost parameter": 750,
+                                "fuel cost parameter": 0,
+                                "batteries energy": 8216}}
+
+        if include_electric_ac:
+            return {**fuel_ac, **electric_ac}
+
+        else:
+            return fuel_ac
 
     def import_network_airports(self):
         df = pd.read_csv("Destination_coordinates.csv")
@@ -242,7 +253,7 @@ class Network:
 
         return legs_len_df
 
-    def determine_routes_properties(self):
+    def determine_routes_properties(self, include_two_stop_routes):
         routes_dict = {}
 
         # -> Set single stop routes
@@ -254,16 +265,17 @@ class Network:
                 routes_dict["-".join(path)] = {"path": path,
                                                "length": 2*self.distances_df.loc[self.hub_ref, airport_1["ref"]]}
 
-                # -> Set two stop routes
-                for airport_2 in self.airports_lst:
-                    if airport_2["ref"] == self.hub_ref or airport_2["ref"] == airport_1["ref"]:
-                        continue
-                    else:
-                        path = [self.hub_ref, airport_1["ref"], airport_2["ref"], self.hub_ref]
-                        routes_dict["-".join(path)] = {"path": path,
-                                                       "length": self.distances_df.loc[self.hub_ref, airport_1["ref"]]
-                                                                 + self.distances_df.loc[airport_1["ref"], airport_2["ref"]]
-                                                                 + self.distances_df.loc[airport_2["ref"], self.hub_ref]}
+                if include_two_stop_routes:
+                    # -> Set two stop routes
+                    for airport_2 in self.airports_lst:
+                        if airport_2["ref"] == self.hub_ref or airport_2["ref"] == airport_1["ref"]:
+                            continue
+                        else:
+                            path = [self.hub_ref, airport_1["ref"], airport_2["ref"], self.hub_ref]
+                            routes_dict["-".join(path)] = {"path": path,
+                                                           "length": self.distances_df.loc[self.hub_ref, airport_1["ref"]]
+                                                                     + self.distances_df.loc[airport_1["ref"], airport_2["ref"]]
+                                                                     + self.distances_df.loc[airport_2["ref"], self.hub_ref]}
 
         # -> Solve for route properties per aircraft
         for aircraft in self.ac_dict.values():
@@ -310,11 +322,25 @@ class Network:
 if __name__ == "__main__":
     net = Network()
 
-    print(net.ac_dict)
-    print(net.airports_lst)
-    print(net.distances_df)
-    print(net.routes_dict)
-    print(net.traffic_df)
+    # print(net.ac_dict)
+    # print(net.airports_lst)
+    # print(net.distances_df)
+    # print(net.routes_dict)
+    # print(net.traffic_df)
+
+    print("\n")
+
+    print("Network nodes count:", len(net.airports_lst))
+    print("Aircraft type count:", len(net.ac_dict))
+    print("Possible routes:", len(net.routes_dict))
+
+    net = Network(question=1)
+
+    # print(net.ac_dict)
+    # print(net.airports_lst)
+    # print(net.distances_df)
+    # print(net.routes_dict)
+    # print(net.traffic_df)
 
     print("\n")
 
