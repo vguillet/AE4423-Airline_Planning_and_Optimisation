@@ -6,8 +6,11 @@
 
 # Built-in/Generic Imports
 import random
+from copy import deepcopy
+import sys
 
 # Libs
+import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
@@ -24,10 +27,9 @@ class Model:
         # -> Setting up records
         self.network = network
 
-        self.decision_variable_dict = self.setup_decision_variables()
-
         # -> Creating model
         self.model = gp.Model("APO_assignment_model")
+        self.setup_decision_variable_dict = self.setup_decision_variables()
 
         # --> Disabling the gurobi console output, set to 1 to enable
         self.model.Params.OutputFlag = 1
@@ -49,17 +51,49 @@ class Model:
         decision_variable_dict = {"Included": {},
                                   "Not_included": {}}
 
+        # -> Creating structure
         for aircraft_ref, aircraft in self.network.ac_dict.items():
-            decision_variable_dict[aircraft_ref] = {"aircraft count": 0,
-                                                    "flight count": pd.DataFrame(0,
-                                                                                 index=np.arange(len(self.network.airports_lst)),
-                                                                                 columns=np.arange(len(self.network.airports_lst))),
-                                                    "x": pd.DataFrame(index=np.arange(len(self.network.airports_lst)),
-                                                                      columns=np.arange(len(self.network.airports_lst))),
-                                                    "w": pd.DataFrame(index=np.arange(len(self.network.airports_lst)),
-                                                                      columns=np.arange(len(self.network.airports_lst)))}
+            # -> Create network edge dataframe
+            edges_df = pd.DataFrame(index=np.arange(len(self.network.airports_lst)),
+                                    columns=np.arange(len(self.network.airports_lst)))
 
-        return
+            edges_df.columns = list(node["ref"] for node in self.network.airports_lst)
+            edges_df = edges_df.reindex(index=list(node["ref"] for node in self.network.airports_lst), fill_value=None)
+
+            # -> Creating skeleton dictionary
+            decision_variable_dict[aircraft_ref] = {"aircraft count": deepcopy(edges_df),
+                                                    "flight count": deepcopy(edges_df),
+                                                    "x": deepcopy(edges_df),
+                                                    "w": deepcopy(edges_df)}
+
+        # -> Adding variables
+            for airport_i in self.network.airports_lst:
+                for airport_j in self.network.airports_lst:
+                    if airport_i == airport_j \
+                            or decision_variable_dict[aircraft_ref]["x"].loc[airport_i["ref"], airport_j["ref"]] is not np.nan \
+                            or decision_variable_dict[aircraft_ref]["x"].loc[airport_j["ref"], airport_i["ref"]] is not np.nan:
+                        continue
+                    else:
+                        # -> Adding flight count variable
+                        variable_name = "fc_" + aircraft_ref + "_" + airport_i["ref"] + "-" + airport_j["ref"]
+
+                        decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i["ref"], airport_j["ref"]] = \
+                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+
+                        # -> Adding x variable
+                        variable_name = "x_" + aircraft_ref + "_" + airport_i["ref"] + "-" + airport_j["ref"]
+
+                        decision_variable_dict[aircraft_ref]["x"].loc[airport_i["ref"], airport_j["ref"]] = \
+                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+
+                        # -> Adding w variable
+                        variable_name = "w_" + aircraft_ref + "_" + airport_i["ref"] + "-" + airport_j["ref"]
+
+                        decision_variable_dict[aircraft_ref]["w"].loc[airport_i["ref"], airport_j["ref"]] = \
+                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+
+        print(decision_variable_dict)
+        return decision_variable_dict
 
     def build_objective(self):
         """
@@ -73,10 +107,10 @@ class Model:
 
         # --> Adding decision variables
         # -> For each aircraft type
-        for aircraft_ref, aircraft in self.decision_variable_dict.items():
+        for aircraft_ref, aircraft in self.network.ac_dict.items():
 
             # -> ... for each route
-            for route_ref, route in aircraft.items():
+            for route_ref, route in self.network.routes_dict.items():
 
                 # -> ... for each route legs
                 for i in range(len(route["path"]) - 1):
@@ -100,14 +134,28 @@ class Model:
 
         return
 
-    def build__constraints(self):
+    def build_flow_constraints(self):
         """
-        Used to generate the demand constraints (1 per student)
+        Used to generate the flow constraints (1 for from hub to node, 1 for from node to node, 1 for from node to hub)
 
-            "sum of decisions variables of all houses for a given student <= 1"
+        from the hub node:
+            "sum of flow from hub + sum of flow through hub <= # flights * # seats per aircraft * avg. load factor"
+
+        between spokes
+
+        to the hub node:
+            "sum of flow to hub + sum of flow through hub <= # flights * # seats per aircraft * avg. load factor"
 
         :return: None
         """
+
+        for destination in self.network.airports_lst:
+            if destination["ref"] != self.network.hub_ref:
+                for aircraft_ref, aircraft in self.network.ac_dict.items():
+                    pass
+
+        # sum(self.build_flow_constraints())
+
         return
 
     def recursive_add_to_linear_expression(self, decision_variable_dict, linear_expression):
