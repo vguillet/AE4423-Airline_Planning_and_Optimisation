@@ -50,13 +50,14 @@ class Model:
                                   "Not_included": {}}
 
         for aircraft_ref, aircraft in self.network.ac_dict.items():
-            decision_variable_dict[aircraft_ref] = {}
-
-            for route_ref, route in self.network.routes_dict.keys():
-                if aircraft[route_ref] == 1:
-                    decision_variable_dict[aircraft_ref][route_ref] = {"aircraft count": 0,
-                                                                       "x": [],
-                                                                       "w": []}
+            decision_variable_dict[aircraft_ref] = {"aircraft count": 0,
+                                                    "flight count": pd.DataFrame(0,
+                                                                                 index=np.arange(len(self.network.airports_lst)),
+                                                                                 columns=np.arange(len(self.network.airports_lst))),
+                                                    "x": pd.DataFrame(index=np.arange(len(self.network.airports_lst)),
+                                                                      columns=np.arange(len(self.network.airports_lst))),
+                                                    "w": pd.DataFrame(index=np.arange(len(self.network.airports_lst)),
+                                                                      columns=np.arange(len(self.network.airports_lst)))}
 
         return
 
@@ -79,41 +80,20 @@ class Model:
 
                 # -> ... for each route legs
                 for i in range(len(route["path"]) - 1):
+                    airport_i = route["path"][i]
+                    airport_j = route["path"][i + 1]
 
-                    # -> for
+                    # -> Adding yield
                     objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i, airport_j] \
                                           * self.network.distances_df.loc[airport_i, airport_j] \
-                                          * (self.decision_variable_dict["x"][airport_i["ref"]][airport_j["ref"]]
-                                             + sum())
+                                          * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i, airport_j],
+                                          + sum(self.decision_variable_dict[aircraft_ref_2]["w"].loc[airport_i, airport_j] for aircraft_ref_2 in self.network.ac_dict.keys()))
 
-
-        # -> For each route
-        for route_ref, route in routes_dict.items():
-            # ... for each route legs
-            for i in range(len(route["path"]) - 1):
-                airport_i = route["path"][i]
-                airport_j = route["path"][i+1]
-
-                # ... for each aircraft type
-                for aircraft in self.network.ac_dict.values():
-                        objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i, airport_j] \
-                                              * self.network.distances_df.loc[airport_i, airport_j] \
-                                              * (self.decision_variable_dict["x"][airport_i["ref"]][airport_j["ref"]]
-                                                 + sum())
-                return
-
-            for airport_i in self.network.airports_lst:
-                # ... for each airport j
-                for airport_j in self.network.airports_lst:
-                    if airport_j == airport_i:
-                        continue
-                    else:
-                        # ... for each aircraft type
-                        for aircraft in self.network.ac_dict.values():
-                            objective_function += aircraft["yield per RPK"] \
-                                                  * self.network.distances_df.loc[airport_i["ref"], airport_j["ref"]] \
-                                                  * (self.decision_variable_dict["x"][airport_i["ref"]][airport_j["ref"]]
-                                                  + sum())
+                    # -> Adding cost
+                    objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i, airport_j] \
+                                          * self.network.distances_df.loc[airport_i, airport_j] \
+                                          * aircraft["seats"] \
+                                          * self.decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i, airport_j]
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)

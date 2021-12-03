@@ -197,8 +197,8 @@ class Network:
         # -> Create network legs properties per aircraft
         for aircraft in self.ac_dict.values():
             aircraft["legs"] = {"viability": deepcopy(edges_df),
-                                "total operating cost": deepcopy(edges_df),
                                 "duration": deepcopy(edges_df),
+                                "total operating cost": deepcopy(edges_df),
                                 "yield per RPK": deepcopy(edges_df)}
 
         # -> Create network legs len df
