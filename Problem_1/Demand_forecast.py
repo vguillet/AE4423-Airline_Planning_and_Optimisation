@@ -113,7 +113,7 @@ class Demand_forcast():
         [k,b1,b2], pcov = opt.curve_fit(self.gravity_model_training,self.training_data["x"],self.training_data["y"])
         return k, b1, b2
 
-    def save(self,file_name = "Problem_1/Demand_forcast_2030.csv"):
+    def save(self,file_name = "Problem_1/Demand_forecast_2030.csv"):
         self.demand_forcast_2030.to_csv(file_name)
 
 
