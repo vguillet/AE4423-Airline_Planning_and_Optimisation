@@ -1,28 +1,14 @@
 import pandas as pd
-import numpy as np
-from numpy import cos, sin, arcsin, sqrt, log, exp
 import scipy.optimize as opt
+from Usefull_functions import *
 
 
 '''Parameters'''
-deg2rad = np.pi/180
 file_name = "Assignment1_Problem1_Datasheets_v2.xlsx"
 sheet_name = "Group 10"
 R_E = 6371 # km radius of the Earth
 f = 1.42 # USD/gallon fuel cost in 2020
 annual_growth = 1.1 / 100 #%
-
-'''Fromulas'''
-def calc_arc(phi_i,phi_j,lambda_i,lambda_j,mode='deg'): ###in deg!
-    if mode == 'deg':
-        phi_i *= deg2rad
-        phi_j *= deg2rad
-        lambda_i *= deg2rad
-        lambda_j *= deg2rad
-    term_1 = (sin( (phi_i-phi_j)/2 ))**2
-    term_2 = cos(phi_i)*cos(phi_j)*(sin( (lambda_i-lambda_j)/2 ))**2
-    arc =  2 * arcsin(sqrt(term_1+term_2))
-    return arc
 
 '''import data'''
 data = pd.read_excel(file_name, sheet_name=sheet_name, header=1, usecols="C:Q", skiprows=4, nrows=5)
@@ -41,8 +27,7 @@ delta_d = np.zeros(d.shape) ## arc length
 
 for i, airport_i in enumerate(airports):
     for j, airport_j in enumerate(airports):
-        delta_d[i, j] = calc_arc(data[airport_i]['Latitude'], data[airport_j]['Latitude'], data[airport_i]['Longitude'], data[airport_j]['Longitude'])
-        d[i, j] = R_E * delta_d[i, j]
+        d[ i,j] = Distance(data[airport_i]['Latitude'], data[airport_j]['Latitude'], data[airport_i]['Longitude'], data[airport_j]['Longitude'])
         # print(f"from {airport_i} to {airport_j} is {dij[i,j]}km")
         if i > j:
             assert d[i, j] == d[j, i] #dubbelcheck
