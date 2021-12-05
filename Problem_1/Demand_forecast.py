@@ -1,110 +1,122 @@
 import pandas as pd
 import scipy.optimize as opt
-from Usefull_functions import *
+import numpy as np
+from numpy import cos, sin, arcsin, sqrt, log
 
 
-'''Parameters'''
-file_name = "Assignment1_Problem1_Datasheets_v2.xlsx"
-sheet_name = "Group 10"
-R_E = 6371 # km radius of the Earth
-f = 1.42 # USD/gallon fuel cost in 2020
-annual_growth = 1.1 / 100 #%
+class Demand_forcast():
+    def __init__(self):
+        # other data
+        self.f = 1.42 # USD/gallon fuel cost in 2020
+        self.annual_growth = 1.1 /100 # %/year
+        self.R_E = 6371 # km radius of the earth
 
-'''import data'''
-data = pd.read_excel(file_name, sheet_name=sheet_name, header=1, usecols="C:Q", skiprows=4, nrows=5)
-data.index = ['ICAO', 'Latitude', 'Longitude', 'Runway', 'Population']
+        # import data
+        self.data, self.demand_2020 = self.import_data()
 
-# for conviniece
-airports = data.columns
-keys = data.index
+        # calculate distance
+        self.distance = self.calculate_distance()
 
-demand_2020 = pd.read_excel(file_name,sheet_name=sheet_name,header=1,usecols="C:L",skiprows=12,nrows=10)
-demand_2020.index = demand_2020.columns #from to??
+        # create training data
+        self.training_data = self.find_matches()
 
-'''calculate distance '''
-d = np.zeros([data.shape[1], data.shape[1]]) ## dij is distance matrix in km
-delta_d = np.zeros(d.shape) ## arc length
+        # fit Gravity model
+        self.k, self.b1, self.b2 = self.fit_gravitiy_model()
 
-for i, airport_i in enumerate(airports):
-    for j, airport_j in enumerate(airports):
-        d[ i,j] = Distance(data[airport_i]['Latitude'], data[airport_j]['Latitude'], data[airport_i]['Longitude'], data[airport_j]['Longitude'])
-        # print(f"from {airport_i} to {airport_j} is {dij[i,j]}km")
-        if i > j:
-            assert d[i, j] == d[j, i] #dubbelcheck
+        # create forcast
+        self.demand_forcast_2030 = self.gravity_model()
 
-'''PromblemA'''
-def demand_forcast(ijs,k,b1,b2):
-    '''formula to calcuate demand'''
-    Dij = []
-    for ij in ijs:
-        i=int(ij[0])
-        j=int(ij[1])
-        pop_i = data[airports[i]]['Population']
-        pop_j = data[airports[j]]['Population']
-        dij = d[i,j]
-        Dij.append(k*(pop_i*pop_j)**b1/(f*dij)**b2)
-    return Dij
+    def import_data(self):
+        file_name = "Assignment1_Problem1_Datasheets_v2.xlsx"
+        sheet_name = "Group 10"
+        data = pd.read_excel(file_name, sheet_name=sheet_name, header=1, usecols="C:Q", skiprows=5, nrows=4)
+        data.index = ['Latitude', 'Longitude', 'Runway', 'Population']
 
-def demand_forcast_log(ijs, k, b1, b2):
-    '''formula to calcuate log of demand'''
-    Dij = []
-    for ij in ijs:
-        i=int(ij[0])
-        j=int(ij[1])
-        pop_i = data[airports[i]]['Population']
-        pop_j = data[airports[j]]['Population']
-        dij = d[i,j]
-        Dij.append(k*(pop_i*pop_j)**b1/(f*dij)**b2)
-    return log(Dij)
+        demand_2020 = pd.read_excel(file_name,sheet_name=sheet_name,header=1,usecols="C:L",skiprows=12,nrows=10)
+        demand_2020.index = demand_2020.columns
+        return data, demand_2020
 
+    def calculate_distance(self):
+        deg2rad = np.pi/180
+        airports = self.data.columns
 
-# find the matches in the given demand_2020 data and the airport data,
-# and save both the index of the airport in data, as well as the ICAO code
-matches = []
-for i, airport in enumerate(airports):
-    ICAO = data[airport]['ICAO']
-    if ICAO in demand_2020.index:
-        matches.append([i,ICAO])
+        d = np.zeros([len(airports),len(airports)])
+        for i, airport_i in enumerate(airports):
+            for j, airport_j in enumerate(airports):
 
-# create x and y data for fitting, by cross pairing the found matches
-x_data = []
-y = []
-y_data = []
-for i in matches:
-    for j in matches:
-        if i[0] != j[0]:
-            x_data.append(np.array([i[0],j[0]]))
-            y.append(demand_2020[i[1]][j[1]])
+                ##just for conviniece
+                phi_i = deg2rad * self.data[airport_i]['Latitude']
+                phi_j = deg2rad * self.data[airport_j]['Latitude']
+                lambda_i = deg2rad * self.data[airport_i]['Longitude']
+                lambda_j = deg2rad * self.data[airport_j]['Longitude']
 
-x_data = np.array(x_data)
-y = np.array(y)
-y_data = y*(annual_growth+1)**10
-y_data_log = log(y_data)
+                term_1 = (sin( (phi_i-phi_j)/2 ))**2
+                term_2 = cos(phi_i)*cos(phi_j)*(sin( (lambda_i-lambda_j)/2 ))**2
 
-# find optimal solution using Scipy that uses least squares as cost
-popt, pcov = opt.curve_fit(demand_forcast,x_data,y_data)
-popt_log, pcov_log = opt.curve_fit(demand_forcast_log, x_data, y_data_log)
+                d[i,j] =  2 * self.R_E * arcsin(sqrt(term_1+term_2))
+
+        distance = pd.DataFrame(d,airports,airports)
+
+        return distance
+
+    def find_matches(self):
+        matches = []
+        x_training = []
+        y_training = []
 
 
+        for airport in self.data.columns:
+            if airport in self.demand_2020.columns:
+                matches.append(airport)
 
-'''Debug'''
-perr_lin = sqrt(np.diag(pcov))
-perr_log = sqrt(np.diag(pcov_log))
+        for airport_i in matches:
+            for airport_j in matches:
+                if airport_i != airport_j:
+                    x_training.append(np.array([self.distance[airport_i][airport_j],
+                                                self.data[airport_i]["Population"],
+                                                self.data[airport_j]["Population"]]))
 
-for i , name in enumerate(['k','b1','b2']):
-    print(f'optimal {name}_lin = {round(popt[i],3)} +- {round(perr_lin[i],3)},   {name}_log = {round(popt_log[i],3)} +- {round(perr_log[i],3)}')
-k = popt_log[0]
-b1 = popt_log[1]
-b2 = popt_log[2]
+                    # the training y is de avarage of the demand back and forth because the gravitiy model is symetrical
+                    y = (self.demand_2020[airport_i][airport_j] + self.demand_2020[airport_j][airport_i])/2
+                    y_training.append( log(y) )
 
-D = np.zeros(d.shape)
-for i, airport_i in enumerate(airports):
-    for j, airport_j in enumerate(airports):
-        if i!=j:
-            # print(k*(data[airport_i]['Population']*data[airport_j]['Population'])**b1/(f*d[i,j])**b2)
-            D[i,j] = k*(data[airport_i]['Population']*data[airport_j]['Population'])**b1/(f*d[i,j])**b2
+        return {"x":x_training, "y":y_training}
 
-D_df = pd.DataFrame(D,airports,airports)
-print('---------------- Demand Forcast: -----------------')
-print(D_df)
-D_df.to_csv('Problem_1/Demand_forecast.csv')
+    def gravity_model_training(self,x_training,k,b1,b2):
+        y_training = []
+
+        for x in x_training:
+            y = k*(x[1]*x[2])**b1/(self.f*x[0])**b2
+            y_training.append( log(y) ) # we train on a linearized method, so log
+        return y_training
+
+    def gravity_model(self, year = 2030):
+        duration = year - 2020
+
+        demand = pd.DataFrame([],self.data.columns,self.data.columns)
+
+        for airport_i in self.data.columns:
+            for airport_j in self.data.columns:
+                if airport_i != airport_j:
+                    population_i_forcast = self.data[airport_i]['Population'] * (1 + self.annual_growth) ** duration
+                    population_j_forcast = self.data[airport_j]['Population'] * (1 + self.annual_growth) ** duration
+
+                    numerator = self.k * (population_i_forcast * population_j_forcast) ** self.b1
+                    denominator = (self.f*self.distance[airport_i][airport_j])**self.b2
+                    demand[airport_i][airport_j] = int(round(numerator/denominator))
+                else:
+                    demand[airport_i][airport_j] = 0
+
+        return demand
+
+    def fit_gravitiy_model(self):
+        [k,b1,b2], pcov = opt.curve_fit(self.gravity_model_training,self.training_data["x"],self.training_data["y"])
+        return k, b1, b2
+
+    def save(self,file_name = "Problem_1/Demand_forecast_2030.csv"):
+        self.demand_forcast_2030.to_csv(file_name)
+
+
+if __name__ == '__main__':
+    D = Demand_forcast()
+    D.save()
