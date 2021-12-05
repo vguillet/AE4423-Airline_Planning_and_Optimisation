@@ -26,11 +26,11 @@ __version__ = '1.1.1'
 class Model:
     def __init__(self, network):
         # -> Setting up records
-        self.network = network
+        self.network = network()
 
         # -> Creating model
         self.model = gp.Model("APO_assignment_model")
-        self.setup_decision_variable_dict = self.setup_decision_variables()
+        self.decision_variable_dict = self.setup_decision_variables()
 
         # --> Disabling the gurobi console output, set to 1 to enable
         self.model.Params.OutputFlag = 1
@@ -39,6 +39,7 @@ class Model:
         # Demand constraint
 
         # Flow constraint
+        self.build_flow_constraints()
 
         # Aircraft utilisation constraint
 
@@ -118,17 +119,26 @@ class Model:
                     airport_i = route["path"][i]
                     airport_j = route["path"][i + 1]
 
-                    # -> Adding yield
+                    # -> Adding yield per leg
                     objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i, airport_j] \
                                           * self.network.distances_df.loc[airport_i, airport_j] \
-                                          * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i, airport_j],
-                                          + sum(self.decision_variable_dict[aircraft_ref_2]["w"].loc[airport_i, airport_j] for aircraft_ref_2 in self.network.ac_dict.keys()))
+                                          * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i, airport_j]
+                                          + self.decision_variable_dict[aircraft_ref]["w"])
 
-                    # -> Adding cost
+                    # objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i, airport_j] \
+                    #                       * self.network.distances_df.loc[airport_i, airport_j] \
+                    #                       * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i, airport_j]
+                    #                       + sum(self.decision_variable_dict[aircraft_ref_2]["w"].loc[airport_i, airport_j] for aircraft_ref_2 in self.network.ac_dict.keys()))
+
+                    # -> Adding cost per leg
                     objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i, airport_j] \
                                           * self.network.distances_df.loc[airport_i, airport_j] \
                                           * aircraft["seats"] \
                                           * self.decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i, airport_j]
+
+            # -> Adding leasing cost
+            objective_function -= self.decision_variable_dict[aircraft_ref]["aircraft count"] \
+                                  * aircraft["weekly lease cost"]
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)
@@ -142,20 +152,68 @@ class Model:
         from the hub node:
             "sum of flow from hub + sum of flow through hub <= # flights * # seats per aircraft * avg. load factor"
 
-        between spokes
+        between spokes:
+            "sum of flow from origin to destination + sum of flow through origin"
 
         to the hub node:
             "sum of flow to hub + sum of flow through hub <= # flights * # seats per aircraft * avg. load factor"
 
+
+        note: each constraint sums flows across aircraft types
+
         :return: None
         """
+
+        # ----------- From hub constraint
+        constraint_l = gp.LinExpr()
+        constraint_r = gp.LinExpr()
 
         for destination in self.network.airports_lst:
             if destination["ref"] != self.network.hub_ref:
                 for aircraft_ref, aircraft in self.network.ac_dict.items():
-                    pass
+                    constraint_l += self.decision_variable_dict[aircraft_ref]["x"].loc[self.network.hub_ref, destination["ref"]]
+                    constraint_l += self.decision_variable_dict[aircraft_ref]["w"].loc[self.network.hub_ref, destination["ref"]]
 
-        # sum(self.build_flow_constraints())
+                    constraint_r += self.decision_variable_dict[aircraft_ref]["flight count"] \
+                                    * self.network.ac_dict[aircraft_ref]["seats"] \
+                                    * self.network.average_load_factor
+
+        self.model.addConstr(constraint_l <= constraint_r, "Constraint - Flow - From hub")
+
+        # ----------- Between nodes constraint (excluding hub)
+        constraint_l = gp.LinExpr()
+        constraint_r = gp.LinExpr()
+
+        for origin in self.network.airports_lst:
+            if origin["ref"] != self.network.hub_ref:
+                for destination in self.network.airports_lst:
+                    if destination["ref"] != self.network.hub_ref:
+                        for aircraft_ref, aircraft in self.network.ac_dict.items():
+                            constraint_l += self.decision_variable_dict[aircraft_ref]["x"].loc[origin["ref"], destination["ref"]]
+                            constraint_l += self.decision_variable_dict[aircraft_ref]["w"].loc[origin["ref"], destination["ref"]]
+
+                            constraint_r += self.decision_variable_dict[aircraft_ref]["flight count"] \
+                                            * self.network.ac_dict[aircraft_ref]["seats"] \
+                                            * self.network.average_load_factor
+
+        self.model.addConstr(constraint_l <= constraint_r, "Constraint - Flow - between nodes")
+
+        # ----------- To hub constraint
+        constraint_l = gp.LinExpr()
+        constraint_r = gp.LinExpr()
+
+        for origin in self.network.airports_lst:
+            if origin["ref"] != self.network.hub_ref:
+                for aircraft_ref, aircraft in self.network.ac_dict.items():
+                    constraint_l += self.decision_variable_dict[aircraft_ref]["x"].loc[origin["ref"], self.network.hub_ref]
+                    constraint_l += self.decision_variable_dict[aircraft_ref]["w"].loc[origin["ref"], self.network.hub_ref]
+
+                    constraint_r += self.decision_variable_dict[aircraft_ref]["flight count"] \
+                                    * self.network.ac_dict[aircraft_ref]["seats"] \
+                                    * self.network.average_load_factor
+
+        self.model.addConstr(constraint_l <= constraint_r, "Constraint - Flow - To hub")
+
 
         return
 

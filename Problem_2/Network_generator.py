@@ -60,6 +60,7 @@ class Network:
 
         # -> Set fleet properties
         self.max_continuous_operation = 10
+        self.average_load_factor = 0.8
 
         # -> Setup aircraft dict
         self.ac_dict = self.create_aircraft_dict(include_electric_ac=include_extra)
@@ -167,6 +168,7 @@ class Network:
 
         # -> Create a node per destination
         airports_lst = []
+        airports_dict = {}
 
         # -> Solving for runway viability for each aircraft type
         for index, row in df.iterrows():
@@ -184,6 +186,11 @@ class Network:
                                  "lon": row["Longitude (deg)"],
                                  "runway": row["Runway (m)"],
                                  "runway compatibility lst": runway_compatibility_lst})
+
+            airports_dict[row["ICAO Code"]] = {"lat": row["Latitude (deg)"],
+                                               "lon": row["Longitude (deg)"],
+                                               "runway": row["Runway (m)"],
+                                               "runway compatibility lst": runway_compatibility_lst}
 
         return airports_lst
 
@@ -315,6 +322,8 @@ class Network:
     def import_network_traffic():
         df = pd.read_csv("Demand_per_week.csv", header=[0])
         df = df.set_index("Unnamed: 0")
+
+        # TODO: Fix
 
         return df
 
