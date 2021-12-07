@@ -35,9 +35,6 @@ class Model:
         self.model.Params.OutputFlag = 1
 
         # --> Setting up constraints
-        # Routes conditionals
-        self.build_route_conditionals()
-
         # Demand constraint
         self.build_demand_constraints()
 
