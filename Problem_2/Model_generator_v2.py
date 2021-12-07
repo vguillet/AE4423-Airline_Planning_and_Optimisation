@@ -57,38 +57,45 @@ class Model:
                                   "Not_included": {}}
 
         # -> Creating structure
+        # ... for every aircraft
         for aircraft_ref, aircraft in self.network.ac_dict.items():
             # -> Create network edge dataframe
             edges_df = pd.DataFrame(index=np.arange(len(self.network.airports_dict)),
                                     columns=np.arange(len(self.network.airports_dict)))
 
             edges_df.columns = list(node for node in self.network.airports_dict.keys())
-            edges_df = edges_df.reindex(index=list(node for node in self.network.airports_dict.keys()), fill_value=None)
+            edges_df = edges_df.reindex(index=list(node for node in self.network.airports_dict.keys()), fill_value=0)
 
             # -> Adding aircraft count decision variable
             decision_variable_dict[aircraft_ref] = {"aircraft count": self.model.addVar(vtype=GRB.INTEGER,
                                                                                         name="# " + aircraft_ref)}
-
+            # ... for every route
             for route_ref, route in self.network.routes_dict.items():
                 decision_variable_dict[aircraft_ref][route_ref] = {"x": deepcopy(edges_df),
-                                                                   "w": deepcopy(edges_df),
-                                                                   "flight count": self.model.addVar(vtype=GRB.INTEGER,
-                                                                                                     name="# " + aircraft_ref)}
+                                                                   "w": deepcopy(edges_df)}
 
-                # -> Adding x and w decision variables
-                for airport_i_ref, airport_i in self.network.airports_dict.items():
-                    for airport_j_ref, airport_j in self.network.airports_dict.items():
-                        if airport_i_ref == airport_j_ref:
-                            continue
-                        else:
-                            if self.network.routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
-                                variable_name = "x - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
-                                decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
-                                    self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+                if aircraft["routes viability"][route_ref] == 0:
+                    decision_variable_dict[aircraft_ref][route_ref]["flight count"] = 0
 
-                                variable_name = "w - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
-                                decision_variable_dict[aircraft_ref][route_ref]["w"].loc[airport_i_ref, airport_j_ref] = \
-                                    self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+                else:
+                    decision_variable_dict[aircraft_ref][route_ref]["flight count"] = \
+                        self.model.addVar(vtype=GRB.INTEGER, name="# " + aircraft_ref)
+
+                    # -> Adding x and w decision variables
+                    # ... for every leg
+                    for airport_i_ref, airport_i in self.network.airports_dict.items():
+                        for airport_j_ref, airport_j in self.network.airports_dict.items():
+                            if airport_i_ref == airport_j_ref:
+                                continue
+                            else:
+                                if self.network.routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
+                                    variable_name = "x - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
+                                    decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
+                                        self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+
+                                    variable_name = "w - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
+                                    decision_variable_dict[aircraft_ref][route_ref]["w"].loc[airport_i_ref, airport_j_ref] = \
+                                        self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
 
         return decision_variable_dict
 
@@ -105,16 +112,19 @@ class Model:
         # --> Adding decision variables
         # ... for every aircraft
         for aircraft_ref, aircraft in self.network.ac_dict.items():
+
             # ... for every route
             for route_ref, route in self.network.routes_dict.items():
+
                 # ... for every leg making up the route
                 for airport_i_ref, airport_i in self.network.airports_dict.items():
                     for airport_j_ref, airport_j in self.network.airports_dict.items():
                         if airport_i_ref == airport_j_ref:
                             continue
                         else:
-                            leg_ws = []
 
+                            # > For every other route served by AC type
+                            leg_ws = []
                             for route_ref_2, route_2 in self.network.routes_dict.items():
                                 if route_ref_2 == route_ref:
                                     pass
@@ -142,44 +152,6 @@ class Model:
 
         return
 
-    def build_route_conditionals(self):
-        """
-        Used to generate route conditional constraints.
-
-        Total # flights on edges == # flights for route containing leg
-
-        :return:
-        """
-
-        # ... for every leg
-        for airport_i_ref, airport_i in self.network.airports_dict.items():
-            for airport_j_ref, airport_j in self.network.airports_dict.items():
-                if airport_i_ref == airport_j_ref:
-                    continue
-                else:
-                    # ----------- Sum (flights on edge across aircrafts) == sum(# times a route is served across aircrafts)
-                    constraint_l = gp.LinExpr()
-                    constraint_r = gp.LinExpr()
-
-                    # ... for every aircraft
-                    for aircraft_ref, aircraft in self.network.ac_dict.items():
-
-                        # ... for every route
-                        for route_ref, route in self.network.routes_dict.items():
-                            for i in range(len(route["path"]) - 1):
-                                if route["path"][i] == airport_i_ref and route["path"][j] == airport_j_ref:
-                                    # -> Add nb. time route is served
-                                    constraint_r += self.decision_variable_dict[aircraft_ref]["routes counter"][route_ref]
-
-                        # -> Add number of time leg is served
-                        constraint_l += self.decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i_ref, airport_j_ref]
-
-                    # -> Add constraint to model
-                    self.model.addConstr(constraint_l == constraint_r,
-                                         "Constraint - Route conditional - " + airport_i_ref + "->" + airport_j_ref)
-
-        return
-
     def build_demand_constraints(self):
         """
         Demand constraints:
@@ -198,33 +170,73 @@ class Model:
         :return:
         """
         # ----------- Overall leg demand
-        for origin_ref, origin in self.network.airports_dict.items():
-            for destination_ref, destination in self.network.airports_dict.items():
+        # ... for every possible leg
+        for airport_i_ref, airport_i in self.network.airports_dict.items():
+            for airport_j_ref, airport_j in self.network.airports_dict.items():
                 constraint_l = gp.LinExpr()
-                constraint_r = gp.LinExpr()
 
+                # ... for every aircraft
                 for aircraft_ref, aircraft in self.network.ac_dict.items():
-                    constraint_l += self.decision_variable_dict[aircraft_ref]["x"].loc[origin_ref, destination_ref]
-                    constraint_l += self.decision_variable_dict[aircraft_ref]["w"].loc[origin_ref, destination_ref]
 
-                constraint_r += self.network.demand_df.loc[origin_ref, destination_ref]
+                    # ... for every route
+                    for route_ref, route in self.network.routes_dict.items():
 
-                self.model.addConstr(constraint_l <= constraint_r,
-                                     "Constraint - Demand - " + origin_ref + "->" + destination_ref)
+                        # > For every other route served by AC type
+                        leg_ws = []
+                        for route_ref_2, route_2 in self.network.routes_dict.items():
+                            if route_ref_2 == route_ref:
+                                pass
+                            else:
+                                leg_ws.append(self.decision_variable_dict[aircraft_ref][route_ref_2]["w"].loc[airport_i_ref, airport_j_ref])
 
-        # ----------- Demand 2
-        # for origin in self.network.airports_lst:
-        #     for destination in self.network.airports_lst:
-        #         constraint_l = gp.LinExpr()
-        #         constraint_r = gp.LinExpr()
-        #
-        #         for aircraft_ref, aircraft in self.network.ac_dict.items():
-        #             constraint_l += self.decision_variable_dict[aircraft_ref]["x"].loc[origin_ref, destination["ref"]]
-        #             constraint_l += self.decision_variable_dict[aircraft_ref]["w"].loc[origin_ref, destination["ref"]]
-        #
-        #         constraint_r += self.network.demand_df.loc[origin_ref, destination["ref"]]
-        #
-        #         self.model.addConstr(constraint_l <= constraint_r, "Constraint - Demand - ")
+                        constraint_l += self.decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref] \
+                                        + sum(leg_ws)
+
+                self.model.addConstr(constraint_l <= self.network.demand_df.loc[airport_i_ref, airport_j_ref],
+                                     "Constraint - Total demand - " + airport_i_ref + "->" + airport_j_ref)
+
+        # ----------- Direct leg demand
+        # ... for every possible leg
+        for airport_i_ref, airport_i in self.network.airports_dict.items():
+            for airport_j_ref, airport_j in self.network.airports_dict.items():
+
+                # ... for every route
+                for route_ref, route in self.network.routes_dict.items():
+                    constraint_l = gp.LinExpr()
+
+                    # ... for every aircraft
+                    for aircraft_ref, aircraft in self.network.ac_dict.items():
+                        constraint_l += \
+                            self.decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
+
+                    self.model.addConstr(constraint_l <= self.network.demand_df.loc[airport_i_ref, airport_j_ref]
+                                         * self.network.routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
+                                         "Constraint - Direct demand - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref)
+
+        # ----------- Indirect leg demand
+        # ... for every possible leg
+        for airport_i_ref, airport_i in self.network.airports_dict.items():
+            for airport_j_ref, airport_j in self.network.airports_dict.items():
+
+                # ... for every route
+                for route_ref, route in self.network.routes_dict.items():
+
+                    # ... for every route 2
+                    for route_ref_2, route_2 in self.network.routes_dict.items():
+                        if route_ref == route_ref_2:
+                            pass
+                        else:
+                            constraint_l = gp.LinExpr()
+
+                            # ... for every aircraft
+                            for aircraft_ref, aircraft in self.network.ac_dict.items():
+                                constraint_l += \
+                                    self.decision_variable_dict[aircraft_ref][route_ref_2]["w"].loc[airport_i_ref, airport_j_ref]
+
+                            self.model.addConstr(constraint_l <= self.network.demand_df.loc[airport_i_ref, airport_j_ref]
+                                                 * self.network.routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref]
+                                                 * self.network.routes_dict[route_ref_2]["path df"].loc[airport_i_ref, airport_j_ref],
+                                                 "Constraint - Indirect demand - " + route_ref + "|" + route_ref_2 + " - " + airport_i_ref + "->" + airport_j_ref)
 
         return
 
