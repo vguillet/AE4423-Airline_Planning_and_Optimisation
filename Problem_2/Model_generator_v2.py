@@ -14,7 +14,6 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
-import pandas as pd
 
 # Own modules
 
@@ -66,49 +65,31 @@ class Model:
             edges_df.columns = list(node for node in self.network.airports_dict.keys())
             edges_df = edges_df.reindex(index=list(node for node in self.network.airports_dict.keys()), fill_value=None)
 
-            # -> Creating skeleton dictionary
-            decision_variable_dict[aircraft_ref] = {"aircraft count": deepcopy(edges_df),
-                                                    "flight count": deepcopy(edges_df),
-                                                    "x": deepcopy(edges_df),
-                                                    "w": deepcopy(edges_df),
-                                                    "routes counter": {}}
+            # -> Adding aircraft count decision variable
+            decision_variable_dict[aircraft_ref] = {"aircraft count": self.model.addVar(vtype=GRB.INTEGER,
+                                                                                        name="# " + aircraft_ref)}
 
-        # -> Adding variables
-            for airport_i_ref, airport_i in self.network.airports_dict.items():
-                for airport_j_ref, airport_j in self.network.airports_dict.items():
-                    if airport_i_ref == airport_j_ref:
-                        continue
-                    else:
-                        # -> Adding flight count variable
-                        variable_name = "fc_" + aircraft_ref + "_" + airport_i_ref + "-" + airport_j_ref
-
-                        decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i_ref, airport_j_ref] = \
-                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
-
-                        # -> Adding x variable
-                        variable_name = "x_" + aircraft_ref + "_" + airport_i_ref + "-" + airport_j_ref
-
-                        decision_variable_dict[aircraft_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
-                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
-
-                        # -> Adding w variable
-                        variable_name = "w_" + aircraft_ref + "_" + airport_i_ref + "-" + airport_j_ref
-
-                        decision_variable_dict[aircraft_ref]["w"].loc[airport_i_ref, airport_j_ref] = \
-                            self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
-
-        # -> Adding routes flown counter for each aircraft
             for route_ref, route in self.network.routes_dict.items():
-                # Fetching viability boolean for given aircraft/route combination
-                variable_name = "route_counter_" + aircraft_ref + "_" + route_ref
-                if self.aircraft["routes viability"][route_ref] == 0:
-                    decision_variable_dict[aircraft_ref]["routes counter"][route_ref] = 0
+                decision_variable_dict[aircraft_ref][route_ref] = {"x": deepcopy(edges_df),
+                                                                   "w": deepcopy(edges_df),
+                                                                   "flight count": self.model.addVar(vtype=GRB.INTEGER,
+                                                                                                     name="# " + aircraft_ref)}
 
-                else:
-                    decision_variable_dict[aircraft_ref]["routes counter"][route_ref] = \
-                        self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+                # -> Adding x and w decision variables
+                for airport_i_ref, airport_i in self.network.airports_dict.items():
+                    for airport_j_ref, airport_j in self.network.airports_dict.items():
+                        if airport_i_ref == airport_j_ref:
+                            continue
+                        else:
+                            if self.network.routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
+                                variable_name = "x - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
+                                decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
+                                    self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
 
-        print(decision_variable_dict)
+                                variable_name = "w - " + aircraft_ref + " - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref
+                                decision_variable_dict[aircraft_ref][route_ref]["w"].loc[airport_i_ref, airport_j_ref] = \
+                                    self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
+
         return decision_variable_dict
 
     def build_objective(self):
@@ -122,37 +103,39 @@ class Model:
         objective_function = gp.LinExpr()
 
         # --> Adding decision variables
-        # -> For each aircraft type
+        # ... for every aircraft
         for aircraft_ref, aircraft in self.network.ac_dict.items():
-
-            # -> ... for each route
+            # ... for every route
             for route_ref, route in self.network.routes_dict.items():
+                # ... for every leg making up the route
+                for airport_i_ref, airport_i in self.network.airports_dict.items():
+                    for airport_j_ref, airport_j in self.network.airports_dict.items():
+                        if airport_i_ref == airport_j_ref:
+                            continue
+                        else:
+                            leg_ws = []
 
-                # -> ... for each route legs
-                for i in range(len(route["path"]) - 1):
-                    airport_i_ref = route["path"][i]
-                    airport_j_ref = route["path"][i + 1]
+                            for route_ref_2, route_2 in self.network.routes_dict.items():
+                                if route_ref_2 == route_ref:
+                                    pass
+                                else:
+                                    leg_ws.append(self.decision_variable_dict[aircraft_ref][route_ref_2]["w"].loc[airport_i_ref, airport_j_ref])
 
-                    # -> Adding yield per leg
-                    objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i_ref, airport_j_ref] \
-                                          * self.network.distances_df.loc[airport_i_ref, airport_j_ref] \
-                                          * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i_ref, airport_j_ref]
-                                             + self.decision_variable_dict[aircraft_ref]["w"])
+                            # -> Adding total yield per leg
+                            objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i_ref, airport_j_ref] \
+                                                  * self.network.distances_df.loc[airport_i_ref, airport_j_ref] \
+                                                  * (self.decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
+                                                     + sum(leg_ws))
 
-                    # objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i_ref, airport_j_ref] \
-                    #                       * self.network.distances_df.loc[airport_i_ref, airport_j_ref] \
-                    #                       * (self.decision_variable_dict[aircraft_ref]["x"].loc[airport_i_ref, airport_j_ref]
-                    #                       + sum(self.decision_variable_dict[aircraft_ref_2]["w"].loc[airport_i_ref, airport_j_ref] for aircraft_ref_2 in self.network.ac_dict.keys()))
+                            # -> Adding total cost per leg
+                            objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] \
+                                                  * self.network.distances_df.loc[airport_i_ref, airport_j_ref] \
+                                                  * aircraft["seats"] \
+                                                  * self.decision_variable_dict[aircraft_ref][route_ref]["flight count"]
 
-                    # -> Adding cost per leg
-                    objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] \
-                                          * self.network.distances_df.loc[airport_i_ref, airport_j_ref] \
-                                          * aircraft["seats"] \
-                                          * self.decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i_ref, airport_j_ref]
-
-            # -> Adding leasing cost per week
-            objective_function -= self.decision_variable_dict[aircraft_ref]["aircraft count"] \
-                                  * aircraft["weekly lease cost"]
+                            # -> Adding leading cost per week for ac type
+                            objective_function -= self.decision_variable_dict[aircraft_ref]["aircraft count"] \
+                                                  * aircraft["weekly lease cost"]
 
         # --> Setting objective
         self.model.setObjective(objective_function, GRB.MAXIMIZE)

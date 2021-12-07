@@ -261,6 +261,14 @@ class Network:
         return legs_len_df
 
     def determine_routes_properties(self, include_two_stop_routes):
+        # -> Create network edge dataframe
+        edges_df = pd.DataFrame(0,
+                                index=np.arange(len(self.airports_dict)),
+                                columns=np.arange(len(self.airports_dict)))
+
+        edges_df.columns = list(node for node in self.airports_dict.keys())
+        edges_df = edges_df.reindex(index=list(node for node in self.airports_dict.keys()), fill_value=0)
+
         routes_dict = {}
 
         # -> Set single stop routes
@@ -270,7 +278,11 @@ class Network:
             else:
                 path = [self.hub_ref, airport_1_ref, self.hub_ref]
                 routes_dict["-".join(path)] = {"path": path,
+                                               "path df": deepcopy(edges_df),
                                                "length": 2*self.distances_df.loc[self.hub_ref, airport_1_ref]}
+
+                routes_dict["-".join(path)]["path df"].loc[self.hub_ref, airport_1_ref] = 1
+                routes_dict["-".join(path)]["path df"].loc[airport_1_ref, self.hub_ref] = 1
 
                 if include_two_stop_routes:
                     # -> Set two stop routes
@@ -280,9 +292,14 @@ class Network:
                         else:
                             path = [self.hub_ref, airport_1_ref, airport_2_ref, self.hub_ref]
                             routes_dict["-".join(path)] = {"path": path,
+                                                           "path df": deepcopy(edges_df),
                                                            "length": self.distances_df.loc[self.hub_ref, airport_1_ref]
                                                                      + self.distances_df.loc[airport_1_ref, airport_2_ref]
                                                                      + self.distances_df.loc[airport_2_ref, self.hub_ref]}
+
+                            routes_dict["-".join(path)]["path df"].loc[self.hub_ref, airport_1_ref] = 1
+                            routes_dict["-".join(path)]["path df"].loc[airport_1_ref, airport_2_ref] = 1
+                            routes_dict["-".join(path)]["path df"].loc[airport_2_ref, self.hub_ref] = 1
 
         # -> Solve for route properties per aircraft
         for aircraft_ref, aircraft in self.ac_dict.items():
