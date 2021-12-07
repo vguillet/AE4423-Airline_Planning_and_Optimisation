@@ -70,14 +70,13 @@ class Model:
             decision_variable_dict[aircraft_ref] = {"aircraft count": deepcopy(edges_df),
                                                     "flight count": deepcopy(edges_df),
                                                     "x": deepcopy(edges_df),
-                                                    "w": deepcopy(edges_df)}
+                                                    "w": deepcopy(edges_df),
+                                                    "routes counter": {}}
 
         # -> Adding variables
             for airport_i_ref, airport_i in self.network.airports_dict.items():
                 for airport_j_ref, airport_j in self.network.airports_dict.items():
-                    if airport_i_ref == airport_j_ref \
-                            or decision_variable_dict[aircraft_ref]["x"].loc[airport_i_ref, airport_j_ref] is not np.nan \
-                            or decision_variable_dict[aircraft_ref]["x"].loc[airport_j_ref, airport_i_ref] is not np.nan:
+                    if airport_i_ref == airport_j_ref:
                         continue
                     else:
                         # -> Adding flight count variable
@@ -102,11 +101,11 @@ class Model:
             for route_ref, route in self.network.routes_dict.items():
                 # Fetching viability boolean for given aircraft/route combination
                 variable_name = "route_counter_" + aircraft_ref + "_" + route_ref
-                if self.aircraft["routes"][route_ref]["viability"] == 0:
-                    decision_variable_dict[aircraft_ref]["routes"][route_ref] = 0
+                if self.aircraft["routes viability"][route_ref] == 0:
+                    decision_variable_dict[aircraft_ref]["routes counter"][route_ref] = 0
 
                 else:
-                    decision_variable_dict[aircraft_ref]["routes"][route_ref] = \
+                    decision_variable_dict[aircraft_ref]["routes counter"][route_ref] = \
                         self.model.addVar(vtype=GRB.INTEGER, name=variable_name)
 
         print(decision_variable_dict)
@@ -164,14 +163,37 @@ class Model:
         """
         Used to generate route conditional constraints.
 
-        Total # flights on route edges == # flights for route
+        Total # flights on edges == # flights for route containing leg
 
         :return:
         """
 
-        for aircraft_ref, aircraft in self.network.ac_dict.items():
-            for route_ref, route in self.network.routes_dict.items():
-                for i in range(len(route["path"]) - 1):
+        # ... for every leg
+        for airport_i_ref, airport_i in self.network.airports_dict.items():
+            for airport_j_ref, airport_j in self.network.airports_dict.items():
+                if airport_i_ref == airport_j_ref:
+                    continue
+                else:
+                    # ----------- Sum (flights on edge across aircrafts) == sum(# times a route is served across aircrafts)
+                    constraint_l = gp.LinExpr()
+                    constraint_r = gp.LinExpr()
+
+                    # ... for every aircraft
+                    for aircraft_ref, aircraft in self.network.ac_dict.items():
+
+                        # ... for every route
+                        for route_ref, route in self.network.routes_dict.items():
+                            for i in range(len(route["path"]) - 1):
+                                if route["path"][i] == airport_i_ref and route["path"][j] == airport_j_ref:
+                                    # -> Add nb. time route is served
+                                    constraint_r += self.decision_variable_dict[aircraft_ref]["routes counter"][route_ref]
+
+                        # -> Add number of time leg is served
+                        constraint_l += self.decision_variable_dict[aircraft_ref]["flight count"].loc[airport_i_ref, airport_j_ref]
+
+                    # -> Add constraint to model
+                    self.model.addConstr(constraint_l == constraint_r,
+                                         "Constraint - Route conditional - " + airport_i_ref + "->" + airport_j_ref)
 
         return
 
