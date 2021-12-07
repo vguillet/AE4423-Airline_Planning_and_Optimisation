@@ -173,13 +173,14 @@ class Model:
         # ... for every possible leg
         for airport_i_ref, airport_i in self.network.airports_dict.items():
             for airport_j_ref, airport_j in self.network.airports_dict.items():
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg
                 constraint_l = gp.LinExpr()
 
-                # ... for every aircraft
-                for aircraft_ref, aircraft in self.network.ac_dict.items():
+                # ... for every route
+                for route_ref, route in self.network.routes_dict.items():
 
-                    # ... for every route
-                    for route_ref, route in self.network.routes_dict.items():
+                    # ... for every aircraft
+                    for aircraft_ref, aircraft in self.network.ac_dict.items():
 
                         # > For every other route served by AC type
                         leg_ws = []
@@ -202,6 +203,7 @@ class Model:
 
                 # ... for every route
                 for route_ref, route in self.network.routes_dict.items():
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route
                     constraint_l = gp.LinExpr()
 
                     # ... for every aircraft
@@ -226,6 +228,7 @@ class Model:
                         if route_ref == route_ref_2:
                             pass
                         else:
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route per route
                             constraint_l = gp.LinExpr()
 
                             # ... for every aircraft
