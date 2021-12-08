@@ -89,6 +89,7 @@ for route_ref, route in routes_dict.items():
                 else:
                     # If leg is part of route
                     if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
+
                         # Make x_ij a decision variable
                         decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
                             model.addVar(vtype=GRB.INTEGER,
@@ -212,7 +213,8 @@ for route_ref, route in routes_dict.items():
     # ... for every subsequent node from hub (m in srh)
     for subsequent_ref in routes_dict[route_ref]["subsequent nodes"][hub_ref]:
         # x_r_Hm
-        constraint_l += decision_variable_dict[route_ref]["x"].loc[hub_ref, subsequent_ref]
+        print(route_ref)
+        constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[hub_ref, subsequent_ref]
 
         # ... for every route 2 (n in R)
         # TODO: Check if exclude route_ref == route_ref_2???
