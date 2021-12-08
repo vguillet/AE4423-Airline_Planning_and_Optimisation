@@ -120,34 +120,34 @@ note: each constraint sums flows across aircraft types per routes, legs are dire
 :return:
 """
 # ----------- Overall leg demand
-# ... for every possible leg
+# ... for every possible leg (i,j in N)
 for airport_i_ref, airport_i in airports_dict.items():
     for airport_j_ref, airport_j in airports_dict.items():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg
         constraint_l = gp.LinExpr()
 
-        # ... for every route
+        # ... for every route (r in R)
         for route_ref, route in routes_dict.items():
 
-            # ... For every route 2
-            leg_ws = []
+            # ... For every route 2 (n in R)
+            leg_w_lst = []
             for route_ref_2, route_2 in routes_dict.items():
                 if route_ref_2 == route_ref:
                     pass
                 else:
-                    leg_ws.append(decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref])
+                    leg_w_lst.append(decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref])
 
-            constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] + sum(leg_ws)
+            constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] + sum(leg_w_lst)
 
         model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
                         name="Constraint - Total demand - " + airport_i_ref + "->" + airport_j_ref)
 
 # ----------- Direct leg demand
-# ... for every possible leg
+# ... for every possible leg (i,j in N)
 for airport_i_ref, airport_i in airports_dict.items():
     for airport_j_ref, airport_j in airports_dict.items():
 
-        # ... for every route
+        # ... for every route (r in R)
         for route_ref, route in routes_dict.items():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route
             constraint_l = gp.LinExpr()
@@ -159,14 +159,14 @@ for airport_i_ref, airport_i in airports_dict.items():
                             name="Constraint - Direct demand - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref)
 
 # ----------- Indirect leg demand
-# ... for every possible leg
+# ... for every possible leg (i,j in N)
 for airport_i_ref, airport_i in airports_dict.items():
     for airport_j_ref, airport_j in airports_dict.items():
 
-        # ... for every route
+        # ... for every route (r in R)
         for route_ref, route in routes_dict.items():
 
-            # ... for every route 2
+            # ... for every route 2 (n in R)
             for route_ref_2, route_2 in routes_dict.items():
                 if route_ref == route_ref_2:
                     pass
@@ -177,8 +177,8 @@ for airport_i_ref, airport_i in airports_dict.items():
                     constraint_l += decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref]
 
                     model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref]
-                                    * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref]
-                                    * routes_dict[route_ref_2]["path df"].loc[airport_i_ref, airport_j_ref],
+                                    * routes_dict[route_ref]["path df"].loc[airport_i_ref, hub_ref]
+                                    * routes_dict[route_ref_2]["path df"].loc[hub_ref, airport_j_ref],
                                     name="Constraint - Indirect demand - " + route_ref + "|" + route_ref_2 + " - " + airport_i_ref + "->" + airport_j_ref)
 
 # =========================================================== Flow constraint
