@@ -66,40 +66,39 @@ for route_ref, route in routes_dict.items():
         decision_variable_dict["routes"][route_ref]["w"][route_ref_2] = deepcopy(edges_df)
 
 # ----------------> Filling x/w/z decision variables
-# ... for every leg
-for airport_i_ref, airport_i in airports_dict.items():
-    for airport_j_ref, airport_j in airports_dict.items():
-        if airport_i_ref == airport_j_ref:
+# ... for every route
+for route_ref, route in routes_dict.items():
+
+    # ... for every aircraft
+    for aircraft_ref, aircraft in aircraft_dict.items():
+
+        # Do not create x decision variables if aircraft is not compatible with route
+        if aircraft["routes viability"][route_ref] == 0:
             pass
         else:
+            # Make z_r_ij a decision variable
+            decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = \
+                model.addVar(vtype=GRB.INTEGER,
+                             name="z - " + aircraft_ref + " - " + route_ref)
 
-            # ... for every route
-            for route_ref, route in routes_dict.items():
-
-                # ... for every aircraft
-                for aircraft_ref, aircraft in aircraft_dict.items():
-                    # Do not create x/w/z decision variables if aircraft is not compatible with route
-                    if airport_i["runway compatibility"][aircraft_ref] == 0 or \
-                            airport_j["runway compatibility"][aircraft_ref] == 0:
-                        pass
-                    else:
-                        # Make z_r_ij a decision variable
-                        decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = \
+        # ... for every leg
+        for airport_i_ref, airport_i in airports_dict.items():
+            for airport_j_ref, airport_j in airports_dict.items():
+                if airport_i_ref == airport_j_ref:
+                    pass
+                else:
+                    # If leg is part of route
+                    if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
+                        # Make x_ij a decision variable
+                        decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
                             model.addVar(vtype=GRB.INTEGER,
-                                         name="z - " + aircraft_ref + " - " + airport_i_ref + "->" + airport_j_ref)
+                                         name="x - " + airport_i_ref + "->" + airport_j_ref)
 
-                        # If leg is part of route
-                        if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
-                            # Make x_ij a decision variable
-                            decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
+                        # Make w_ij a decision variable
+                        for route_ref_2, route_2 in routes_dict.items():
+                            decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref] = \
                                 model.addVar(vtype=GRB.INTEGER,
-                                             name="x - " + airport_i_ref + "->" + airport_j_ref)
-
-                            # Make w_ij a decision variable
-                            for route_ref_2, route_2 in routes_dict.items():
-                                decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref] = \
-                                    model.addVar(vtype=GRB.INTEGER,
-                                                 name="w - " + airport_i_ref + "->" + airport_j_ref)
+                                             name="w - " + airport_i_ref + "->" + airport_j_ref)
 
 # ============================================================================= Setting up constraints
 # =========================================================== Demand constraint
