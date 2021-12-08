@@ -141,7 +141,7 @@ def generate_data(question=0):
         ac_dict = fuel_ac
 
     # =========================================================== Import airport
-    airport_df = pd.read_csv("Destination_coordinates.csv")
+    airport_df = pd.read_csv("Problem_2/Destination_coordinates.csv")
 
     # -> Reshape data
     airport_df = airport_df.transpose()
@@ -259,8 +259,17 @@ def generate_data(question=0):
             continue
         else:
             path = [hub_ref, airport_1_ref, hub_ref]
+
+            subsequent_nodes = {hub_ref: [airport_1_ref, hub_ref],
+                                airport_1_ref: [hub_ref]}
+
+            precedent_nodes = {hub_ref: [hub_ref],
+                               airport_1_ref: [airport_1_ref, hub_ref]}
+
             routes_dict["-".join(path)] = {"path": path,
                                            "path df": deepcopy(edges_df),
+                                           "subsequent nodes": subsequent_nodes,
+                                           "precedent nodes": precedent_nodes,
                                            "length": 2*distances_df.loc[hub_ref, airport_1_ref]}
 
             routes_dict["-".join(path)]["path df"].loc[hub_ref, airport_1_ref] = 1
@@ -273,8 +282,19 @@ def generate_data(question=0):
                         continue
                     else:
                         path = [hub_ref, airport_1_ref, airport_2_ref, hub_ref]
+
+                        subsequent_nodes = {hub_ref: [airport_1_ref, airport_2_ref, hub_ref],
+                                            airport_1_ref: [airport_2_ref, hub_ref],
+                                            airport_2_ref: [hub_ref]}
+
+                        precedent_nodes = {hub_ref: [hub_ref],
+                                           airport_1_ref: [airport_1_ref, hub_ref],
+                                           airport_2_ref: [airport_2_ref, airport_1_ref, hub_ref]}
+
                         routes_dict["-".join(path)] = {"path": path,
                                                        "path df": deepcopy(edges_df),
+                                                       "subsequent nodes": subsequent_nodes,
+                                                       "precedent nodes": precedent_nodes,
                                                        "length": distances_df.loc[hub_ref, airport_1_ref]
                                                                  + distances_df.loc[airport_1_ref, airport_2_ref]
                                                                  + distances_df.loc[airport_2_ref, hub_ref]}
@@ -290,6 +310,7 @@ def generate_data(question=0):
         for route_ref, route in routes_dict.items():
             # -> Checking route viability for aircraft model
             # > Checking range
+            viable = 0
             if aircraft["max range"] >= route["length"]:
                 viable = 1
 
@@ -304,8 +325,8 @@ def generate_data(question=0):
                     else:
                         viable = 0
 
-                # -> Set route viability
-                aircraft["routes viability"][route_ref] = viable
+            # -> Set route viability
+            aircraft["routes viability"][route_ref] = viable
 
                 # for i in range(len(route["path"])-1):
                 #     # -> Solve for route duration
@@ -324,7 +345,7 @@ def generate_data(question=0):
                 #         aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
 
     # =========================================================== Import network traffic
-    traffic_df = pd.read_csv("Demand_per_week.csv", header=[0])
+    traffic_df = pd.read_csv("Problem_1/Demand_forecast_2030.csv", header=[0])
     traffic_df = traffic_df.set_index("Unnamed: 0")
 
     # TODO: Fix
