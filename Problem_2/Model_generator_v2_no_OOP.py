@@ -222,7 +222,7 @@ for route_ref, route in routes_dict.items():
         for route_ref_2, route_2 in routes_dict.items():
 
             # ... for every destination from hub 2 (p in N)
-            for airport_p_ref, airport_i in airports_dict.items():
+            for airport_p_ref, airport_p in airports_dict.items():
                 # w_nr_pm
                 # TODO: Double check nr/rn order
                 constraint_l += decision_variable_dict[route_ref_2]["w"][route_ref].loc[airport_p_ref, subsequent_ref]
@@ -249,12 +249,12 @@ for route_ref, route in routes_dict.items():
         airport_j_ref = route["path"][2]
 
         # ... for every subsequent node from hub (m in srj)
-        for subsequent_ref in airports_dict[routes_dict[route_ref]["subsequent nodes"][route["path"][2]]]:
+        for subsequent_ref in airports_dict[routes_dict[route_ref]["subsequent nodes"][airport_j_ref]]:
             # x_r_im
             constraint_l += decision_variable_dict[route_ref]["x"].loc[airport_i_ref, subsequent_ref]
 
-        # ... for every precedent_ref node from hub (m in pri)
-        for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][route["path"][1]]]:
+        # ... for every precedent_ref node from hub (m in Pri)
+        for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
             # x_r_mj
             constraint_l += decision_variable_dict[route_ref]["x"].loc[precedent_ref, airport_j_ref]
 
@@ -281,22 +281,21 @@ for route_ref, route in routes_dict.items():
     constraint_l = gp.LinExpr()
     constraint_r = gp.LinExpr()
 
+    airport_i_ref = route["path"][2]
     # ------ Left hand of constraint
-    # ... for every subsequent node from hub (m srh)
-    for precedent_ref in routes_dict[route_ref]["precedent nodes"][hub_ref]:
+    # ... for every precedent_ref node from hub (m in Pri)
+    for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
         # x_r_mH
         constraint_l += decision_variable_dict[route_ref]["x"].loc[precedent_ref, hub_ref]
 
-        # ... for every route 2 (n)
-        # TODO: Check if exclude route_ref == route_ref_2???
+        # ... for every route 2 (n in R)
         for route_ref_2, route_2 in routes_dict.items():
-            if route_ref == route_ref_2:
-                pass
-            else:
-                # ... for every destination from hub 2 (p)
-                for airport_j_ref, airport_j in airports_dict.items():
-                    # w_nr_pm
-                    constraint_l += decision_variable_dict[route_ref]["w"][route_ref_2].loc[hub_ref, airport_j_ref]
+
+            # ... for every destination from hub 2 (p in N)
+            for airport_p_ref, airport_p in airports_dict.items():
+                # w_nr_pm
+                # TODO: Double check nr/rn order
+                constraint_l += decision_variable_dict[route_ref]["w"][route_ref_2].loc[precedent_ref, airport_p_ref]
 
     # ------ Right hand of constraint
     # ... for every aircraft
@@ -305,7 +304,7 @@ for route_ref, route in routes_dict.items():
                         * aircraft_dict[aircraft_ref]["seats"] \
                         * average_load_factor
 
-    model.addConstr(constraint_l <= constraint_r, "Constraint - Flow (from hub) - " + route_ref)
+    model.addConstr(constraint_l <= constraint_r, "Constraint - Flow (to hub) - " + route_ref)
 
 
 # =========================================================== Aircraft utilisation constraint
