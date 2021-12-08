@@ -226,12 +226,12 @@ for route_ref, route in routes_dict.items():
             for airport_p_ref, airport_p in airports_dict.items():
                 # w_nr_pm
                 # TODO: Double check nr/rn order
-                constraint_l += decision_variable_dict[route_ref_2]["w"][route_ref].loc[airport_p_ref, subsequent_ref]
+                constraint_l += decision_variable_dict["routes"][route_ref_2]["w"][route_ref].loc[airport_p_ref, subsequent_ref]
 
     # ------ Right hand of constraint
     # ... for every aircraft (k in K)
     for aircraft_ref, aircraft in aircraft_dict.items():
-        constraint_r += decision_variable_dict[aircraft_ref]["z"][route_ref] \
+        constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] \
                         * aircraft_dict[aircraft_ref]["seats"] \
                         * average_load_factor
 
@@ -252,12 +252,12 @@ for route_ref, route in routes_dict.items():
         # ... for every subsequent node from hub (m in srj)
         for subsequent_ref in airports_dict[routes_dict[route_ref]["subsequent nodes"][airport_j_ref]]:
             # x_r_im
-            constraint_l += decision_variable_dict[route_ref]["x"].loc[airport_i_ref, subsequent_ref]
+            constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, subsequent_ref]
 
         # ... for every precedent_ref node from hub (m in Pri)
         for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
             # x_r_mj
-            constraint_l += decision_variable_dict[route_ref]["x"].loc[precedent_ref, airport_j_ref]
+            constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[precedent_ref, airport_j_ref]
 
         # ... for every route (n in R)
         for route_ref_2, route_2 in routes_dict.items():
@@ -269,7 +269,7 @@ for route_ref, route in routes_dict.items():
         # ------ Right hand of constraint
         # ... for every aircraft (k in K)
         for aircraft_ref, aircraft in aircraft_dict.items():
-            constraint_r += decision_variable_dict[aircraft_ref]["z"][route_ref] \
+            constraint_r += decision_variable_dict["aircraft"][aircraft_ref]["z"][route_ref] \
                             * aircraft_dict[aircraft_ref]["seats"] \
                             * average_load_factor
 
@@ -285,9 +285,10 @@ for route_ref, route in routes_dict.items():
     airport_i_ref = route["path"][2]
     # ------ Left hand of constraint
     # ... for every precedent_ref node from hub (m in Pri)
+    print(airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]])
     for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
         # x_r_mH
-        constraint_l += decision_variable_dict[route_ref]["x"].loc[precedent_ref, hub_ref]
+        constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[precedent_ref, hub_ref]
 
         # ... for every route 2 (n in R)
         for route_ref_2, route_2 in routes_dict.items():
@@ -296,12 +297,12 @@ for route_ref, route in routes_dict.items():
             for airport_p_ref, airport_p in airports_dict.items():
                 # w_nr_pm
                 # TODO: Double check nr/rn order
-                constraint_l += decision_variable_dict[route_ref]["w"][route_ref_2].loc[precedent_ref, airport_p_ref]
+                constraint_l += decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[precedent_ref, airport_p_ref]
 
     # ------ Right hand of constraint
     # ... for every aircraft
     for aircraft_ref, aircraft in aircraft_dict.items():
-        constraint_r += decision_variable_dict[aircraft_ref]["z"][route_ref] \
+        constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] \
                         * aircraft_dict[aircraft_ref]["seats"] \
                         * average_load_factor
 
