@@ -195,6 +195,7 @@ def generate_data(question=0):
 
     # -> Create network legs len df
     distances_df = deepcopy(edges_df)
+    yield_df = deepcopy(edges_df)
 
     # -> Solving for legs values
     for airport_i_ref, airport_i in airports_dict.items():
@@ -207,6 +208,9 @@ def generate_data(question=0):
                     haversine((airport_i["lat"], airport_i["lon"]), (airport_j["lat"], airport_j["lon"]))[1]
 
                 distances_df.loc[airport_i_ref, airport_j_ref] = leg_len
+
+                # Solve for leg yield per passenger
+                yield_df.loc[airport_i_ref, airport_j_ref] = 5.9 * leg_len ** (-0.76) + 0.043
 
                 # -> Solving for leg property for each aircraft type
                 for aircraft_ref, aircraft in ac_dict.items():
@@ -237,10 +241,6 @@ def generate_data(question=0):
                     else:
                         aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
                             (fixed_operating_cost + time_cost + fuel_cost) + energy_cost
-
-                    # Solve for leg yield per passenger
-                    aircraft["legs"]["yield per RPK"].loc[airport_i_ref, airport_j_ref] = \
-                        5.9*leg_len**(-0.76) + 0.043
 
     # =========================================================== Determine route properties
     # -> Create network edge dataframe
@@ -350,7 +350,7 @@ def generate_data(question=0):
 
     # TODO: Fix
     
-    return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df
+    return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df
 
 
 if __name__ == "__main__":

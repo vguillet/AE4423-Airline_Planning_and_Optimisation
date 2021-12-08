@@ -20,11 +20,12 @@ from Problem_2.Network_generator_no_OOP import generate_data
 
 __version__ = '1.1.1'
 
+# TODO: Fix currency ratio for fuel/euro
 ################################################################################################################
 
 # =========================================================== Generate data
 hub, hub_ref, max_continuous_operation, average_load_factor, \
-aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df = generate_data()
+aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data()
 
 
 # -> Creating model
@@ -317,9 +318,9 @@ for aircraft_ref, aircraft in aircraft_dict.items():
     # ... for every route (r in R)
     for route_ref, route in routes_dict.items():
         constraint_l += (route["length"]/aircraft["speed"]
-                        + aicraft["avg TAT"] * len(route["path"]-1) + aicraft["avg TAT"] * 1.5  # TODO: Check LTO computations
-                        + aircraft["extra charging time"]) \
-                        * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
+                         + aicraft["avg TAT"] * (len(route["path"]-1) + 1.5)
+                         + aircraft["extra charging time"]) \
+                         * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
 
     constraint_r += max_continuous_operation * decision_variable_dict["aircrafts"][aircraft_ref]["count"]
 
@@ -338,64 +339,48 @@ during data preprocessing in route generation). If a route is not viable, corres
 objective_function = gp.LinExpr()
 
 # --> Adding decision variables
+# ... for every route
+for route_ref, route in routes_dict.items():
+    # ... for every leg making up the route
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            if airport_i_ref == airport_j_ref:
+                continue
+            else:
+                # > For every other route served by AC type
+                leg_w_lst = []
+                for route_ref_2, route_2 in routes_dict.items():
+                    leg_w_lst.append(decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref])
+
+                # -> Adding total yield per leg
+                objective_function += yield_df.loc[airport_i_ref, airport_j_ref] \
+                                      * distances_df.loc[airport_i_ref, airport_j_ref] \
+                                      * (decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
+                                         + sum(leg_w_lst) * 0.9) # 10% discount for costumers connecting at the hub
+
+    # ... for every aircraft
+    for aircraft_ref, aircraft in aircraft_dict.items():
+        total_route_cost = 0
+        for i in range(len(route["path"]-1)):
+            airport_i_ref = route["path"][i]
+            airport_j_ref = route["path"][i+1]
+
+            total_route_cost += aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref]
+
+        # -> Adding total cost per leg
+        objective_function -= total_route_cost \
+                              * aircraft["seats"] \
+                              * decision_variable_dict["aircraft"][aircraft_ref]["z"][route_ref]
+
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
-
-    # ... for every route
-    for route_ref, route in routes_dict.items():
-
-        # ... for every leg making up the route
-        for airport_i_ref, airport_i in airports_dict.items():
-            for airport_j_ref, airport_j in airports_dict.items():
-                if airport_i_ref == airport_j_ref:
-                    continue
-                else:
-
-                    # > For every other route served by AC type
-                    leg_ws = []
-                    for route_ref_2, route_2 in routes_dict.items():
-                        if route_ref_2 == route_ref:
-                            pass
-                        else:
-                            leg_ws.append(decision_variable_dict[aircraft_ref][route_ref_2]["w"].loc[airport_i_ref, airport_j_ref])
-
-                    # -> Adding total yield per leg
-                    objective_function += aircraft["legs"]["yield per RPK"].loc[airport_i_ref, airport_j_ref] \
-                                          * distances_df.loc[airport_i_ref, airport_j_ref] \
-                                          * (decision_variable_dict[aircraft_ref][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
-                                             + sum(leg_ws))
-
-                    # -> Adding total cost per leg
-                    objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] \
-                                          * distances_df.loc[airport_i_ref, airport_j_ref] \
-                                          * aircraft["seats"] \
-                                          * decision_variable_dict[aircraft_ref][route_ref]["flight count"]
-
-                    # -> Adding leading cost per week for ac type
-                    objective_function -= decision_variable_dict[aircraft_ref]["aircraft count"] \
-                                          * aircraft["weekly lease cost"]
+    # -> Adding leading cost per week for ac type
+    objective_function -= decision_variable_dict["aircraft"][aircraft_ref]["count"] \
+                          * aircraft["weekly lease cost"]
 
 # --> Setting objective
 model.setObjective(objective_function, GRB.MAXIMIZE)
 
 # ============================================================================= Optimise model
 model.write("Model.lp")
-model.optimize()
-
-# def recursive_add_to_linear_expression(decision_variable_dict, linear_expression):
-#     """
-#     Recursively add all the variables stored in a dictionary to a gurobi linear expression
-#
-#     :param decision_variable_dict: Dictionary to be recursively iterated through
-#     :param linear_expression: Linear expression to append to
-#     :return: augmented linear expression
-#     """
-#
-#     for _, variable in decision_variable_dict.items():
-#         if isinstance(variable, dict):
-#             recursive_add_to_linear_expression(variable, linear_expression)
-#         else:
-#             if variable is not None:
-#                 linear_expression += variable
-#     return linear_expression
-
+# model.optimize()
