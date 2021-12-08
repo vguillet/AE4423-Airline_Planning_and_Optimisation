@@ -56,7 +56,7 @@ for aircraft_ref, aircraft in aircraft_dict.items():
                                                                                name="# " + aircraft_ref)}
     # ... for every route
     for route_ref, route in routes_dict.items():
-        decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = deepcopy(edges_df)
+        decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = 0
 
 # ... for every route
 for route_ref, route in routes_dict.items():
@@ -84,10 +84,9 @@ for airport_i_ref, airport_i in airports_dict.items():
                         pass
                     else:
                         # Make z_r_ij a decision variable
-                        decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref].loc[airport_i_ref, airport_j_ref] = \
+                        decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = \
                             model.addVar(vtype=GRB.INTEGER,
                                          name="z - " + aircraft_ref + " - " + airport_i_ref + "->" + airport_j_ref)
-
 
                         # If leg is part of route
                         if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
@@ -182,7 +181,6 @@ for airport_i_ref, airport_i in airports_dict.items():
                                     * routes_dict[route_ref_2]["path df"].loc[airport_i_ref, airport_j_ref],
                                     name="Constraint - Indirect demand - " + route_ref + "|" + route_ref_2 + " - " + airport_i_ref + "->" + airport_j_ref)
 
-sys.exit("Done")
 # =========================================================== Flow constraint
 """
 Used to generate the flow constraints (1 for from hub to node, 1 for from node to node, 1 for from node to hub)
