@@ -16,11 +16,10 @@ import gurobipy as gp
 from gurobipy import GRB
 
 # Own modules
-from Problem_2.Network_generator_no_OOP import generate_data
+from Problem_2.Network_2_generator import generate_data
 
 __version__ = '1.1.1'
 
-# TODO: Fix currency ratio for fuel/euro
 ################################################################################################################
 
 # =========================================================== Generate data
@@ -29,7 +28,7 @@ aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = 
 
 
 # -> Creating model
-model = gp.Model("APO_assignment_model")
+model = gp.Model("APO_assignment_model_2")
 
 # -> Disabling the gurobi console output, set to 1 to enable
 model.Params.OutputFlag = 1
@@ -225,7 +224,6 @@ for route_ref, route in routes_dict.items():
             # ... for every destination from hub 2 (p in N)
             for airport_p_ref, airport_p in airports_dict.items():
                 # w_nr_pm
-                # TODO: Double check nr/rn order
                 constraint_l += decision_variable_dict["routes"][route_ref_2]["w"][route_ref].loc[airport_p_ref, subsequent_ref]
 
     # ------ Right hand of constraint
@@ -295,7 +293,6 @@ for route_ref, route in routes_dict.items():
             # ... for every destination from hub 2 (p in N)
             for airport_p_ref, airport_p in airports_dict.items():
                 # w_nr_pm
-                # TODO: Double check nr/rn order
                 constraint_l += decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[precedent_ref, airport_p_ref]
 
     # ------ Right hand of constraint
@@ -374,7 +371,7 @@ for route_ref, route in routes_dict.items():
 
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
-    # -> Adding leading cost per week for ac type
+    # -> Adding leasing cost per week for ac type
     objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
                           * aircraft["weekly lease cost"]
 
@@ -382,6 +379,6 @@ for aircraft_ref, aircraft in aircraft_dict.items():
 model.setObjective(objective_function, GRB.MAXIMIZE)
 
 # ============================================================================= Optimise model
-model.write("Model.lp")
+model.write("Model_2.lp")
 print("Model compiled!!!")
 # model.optimize()

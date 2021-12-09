@@ -1,17 +1,15 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from math import sqrt
-import sys
 from copy import deepcopy
 
 from Haversine_function import haversine
 
-USD2EUR = 0.9 # EUR/USD in 2020
-e_eur = 0.07 * USD2EUR # EUR/kWh
-f_eur = 1.42 * USD2EUR # EUR/gallon
+USD2EUR = 0.9           # EUR/USD in 2020
+e_eur = 0.07 * USD2EUR  # EUR/kWh
+f_eur = 1.42 * USD2EUR  # EUR/gallon
 
-def generate_data(question=0):
+
+def generate_data():
     """
     Data structure:"
 
@@ -55,24 +53,18 @@ def generate_data(question=0):
     All dataframes are indexed using the airports ICAO codes for convenience
     """
 
-    if question == 0:
-        include_electric_ac = False
-        include_two_stop_routes = False
-
-    else:
-        include_electric_ac = True
-        include_two_stop_routes = True
+    include_two_stop_routes = True
 
     # -> Set Network hub
     hub = "Malmö"
     hub_ref = "ESMS"
 
     # -> Set fleet properties
-    max_continuous_operation = 10
+    max_continuous_operation = 10 * 7
     average_load_factor = 0.8
     
     # =========================================================== Create aircraft dict
-    fuel_ac = {"AC_1": {"speed": 550,
+    ac_dict = {"AC_1": {"speed": 550,
                         "seats": 45,
                         "avg TAT": 25,
                         "extra charging time": 0,
@@ -109,39 +101,33 @@ def generate_data(question=0):
                         "fixed operating cost": 1250,
                         "time cost parameter": 1400,
                         "fuel cost parameter": 3.75,
-                        "batteries energy": 0}}
+                        "batteries energy": 0},
 
-    electric_ac = {"AC_4": {"speed": 350,
-                            "seats": 20,
-                            "avg TAT": 20,
-                            "extra charging time": 20,
-                            "max range": 400,
-                            "runway req": 750,
+               "AC_4": {"speed": 350,
+                        "seats": 20,
+                        "avg TAT": 20,
+                        "extra charging time": 20,
+                        "max range": 400,
+                        "runway req": 750,
 
-                            "weekly lease cost": 12000,
-                            "fixed operating cost": 90,
-                            "time cost parameter": 750,
-                            "fuel cost parameter": 0,
-                            "batteries energy": 2130},
+                        "weekly lease cost": 12000,
+                        "fixed operating cost": 90,
+                        "time cost parameter": 750,
+                        "fuel cost parameter": 0,
+                        "batteries energy": 2130},
 
-                   "AC_5": {"speed": 480,
-                            "seats": 48,
-                            "avg TAT": 25,
-                            "extra charging time": 45,
-                            "max range": 1000,
-                            "runway req": 950,
+               "AC_5": {"speed": 480,
+                        "seats": 48,
+                        "avg TAT": 25,
+                        "extra charging time": 45,
+                        "max range": 1000,
+                        "runway req": 950,
 
-                            "weekly lease cost": 22000,
-                            "fixed operating cost": 120,
-                            "time cost parameter": 750,
-                            "fuel cost parameter": 0,
-                            "batteries energy": 8216}}
-
-    if include_electric_ac:
-        ac_dict = {**fuel_ac, **electric_ac}
-
-    else:
-        ac_dict = fuel_ac
+                        "weekly lease cost": 22000,
+                        "fixed operating cost": 120,
+                        "time cost parameter": 750,
+                        "fuel cost parameter": 0,
+                        "batteries energy": 8216}}
 
     # =========================================================== Import airport
     airport_df = pd.read_csv("Problem_2/Destination_coordinates.csv")
@@ -331,47 +317,29 @@ def generate_data(question=0):
             # -> Set route viability
             aircraft["routes viability"][route_ref] = viable
 
-                # for i in range(len(route["path"])-1):
-                #     # -> Solve for route duration
-                #     aircraft["routes"][route_ref]["duration"] += \
-                #         aircraft["legs"]["duration"].loc[route["path"][i], route["path"][i+1]]
-                #
-                #     # -> Solve for route total cost
-                #     # > If current i is hub and not start
-                #     # if i != 0 and len(route_path) > 3 and route["path"][i] == hub_ref:
-                #
-                #     aircraft["routes"][route_ref]["total operating cost"] += \
-                #         aircraft["legs"]["total operating cost"].loc[route["path"][i], route["path"][i+1]]
-                #
-                #     # Solve for route yield per passenger
-                #     aircraft["routes"][route_ref]["yield per RPK"] += \
-                #         aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
-
     # =========================================================== Import network traffic
     traffic_df = pd.read_csv("Problem_1/Demand_forecast_2030.csv", header=[0])
     traffic_df = traffic_df.set_index("Unnamed: 0")
 
-    # TODO: Fix
-    
     return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df
 
 
 if __name__ == "__main__":
-    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df = generate_data()
+    # hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data()
+    #
+    # # print(ac_dict)
+    # # print(airports_lst)
+    # # print(distances_df)
+    # # print(routes_dict)
+    # # print(traffic_df)
+    #
+    # print("\n")
+    #
+    # print("Network nodes count:", len(airports_dict))
+    # print("Aircraft type count:", len(ac_dict))
+    # print("Possible routes:", len(routes_dict))
 
-    # print(ac_dict)
-    # print(airports_lst)
-    # print(distances_df)
-    # print(routes_dict)
-    # print(traffic_df)
-
-    print("\n")
-
-    print("Network nodes count:", len(airports_dict))
-    print("Aircraft type count:", len(ac_dict))
-    print("Possible routes:", len(routes_dict))
-
-    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df = generate_data(question=1)
+    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(question=1)
 
     # print(ac_dict)
     # print(airports_dict)
