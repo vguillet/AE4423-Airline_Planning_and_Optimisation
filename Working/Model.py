@@ -16,7 +16,7 @@ import gurobipy as gp
 from gurobipy import GRB
 
 # Own modules
-from Problem_2.Network_generator_no_OOP import generate_data
+from Working.Network import generate_data
 
 __version__ = '1.1.1'
 
