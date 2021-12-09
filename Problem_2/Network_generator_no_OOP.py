@@ -69,7 +69,7 @@ def generate_data(question=0):
     average_load_factor = 0.8
     
     # =========================================================== Create aircraft dict
-    fuel_ac = {"AC 1": {"speed": 550,
+    fuel_ac = {"AC_1": {"speed": 550,
                         "seats": 45,
                         "avg TAT": 25,
                         "extra charging time": 0,
@@ -82,7 +82,7 @@ def generate_data(question=0):
                         "fuel cost parameter": 1,
                         "batteries energy": 0},
 
-               "AC 2": {"speed": 820,
+               "AC_2": {"speed": 820,
                         "seats": 70,
                         "avg TAT": 35,
                         "extra charging time": 0,
@@ -95,7 +95,7 @@ def generate_data(question=0):
                         "fuel cost parameter": 2,
                         "batteries energy": 0},
 
-               "AC 3": {"speed": 850,
+               "AC_3": {"speed": 850,
                         "seats": 150,
                         "avg TAT": 45,
                         "extra charging time": 0,
@@ -108,7 +108,7 @@ def generate_data(question=0):
                         "fuel cost parameter": 3.75,
                         "batteries energy": 0}}
 
-    electric_ac = {"AC 4": {"speed": 350,
+    electric_ac = {"AC_4": {"speed": 350,
                             "seats": 20,
                             "avg TAT": 20,
                             "extra charging time": 20,
@@ -121,7 +121,7 @@ def generate_data(question=0):
                             "fuel cost parameter": 0,
                             "batteries energy": 2130},
 
-                   "AC 5": {"speed": 480,
+                   "AC_5": {"speed": 480,
                             "seats": 48,
                             "avg TAT": 25,
                             "extra charging time": 45,

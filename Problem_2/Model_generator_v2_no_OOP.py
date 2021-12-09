@@ -54,7 +54,7 @@ for aircraft_ref, aircraft in aircraft_dict.items():
     # -> Adding aircraft count decision variable
     decision_variable_dict["aircrafts"][aircraft_ref] = {"z": {},
                                                          "count": model.addVar(vtype=GRB.INTEGER,
-                                                                               name="# " + aircraft_ref)}
+                                                                               name="#_" + aircraft_ref)}
     # ... for every route
     for route_ref, route in routes_dict.items():
         decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = 0
@@ -80,30 +80,30 @@ for route_ref, route in routes_dict.items():
             # Make z_r_ij a decision variable
             decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref] = \
                 model.addVar(vtype=GRB.INTEGER,
-                             name="z - " + aircraft_ref + " - " + route_ref)
+                             name="z-" + aircraft_ref + "-" + route_ref)
 
-        # ... for every leg
-        for airport_i_ref, airport_i in airports_dict.items():
-            for airport_j_ref, airport_j in airports_dict.items():
-                if airport_i_ref == airport_j_ref:
-                    pass
-                else:
-                    # If leg is part of route
-                    if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
+    # ... for every leg
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            if airport_i_ref == airport_j_ref:
+                pass
+            else:
+                # If leg is part of route
+                if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
 
-                        # Make x_ij a decision variable
-                        decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
-                            model.addVar(vtype=GRB.INTEGER,
-                                         name="x - " + airport_i_ref + "->" + airport_j_ref)
+                    # Make x_ij a decision variable
+                    decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
+                        model.addVar(vtype=GRB.INTEGER,
+                                     name="x-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
-                        # Make w_ij a decision variable
-                        for route_ref_2, route_2 in routes_dict.items():
-                            if route_ref == route_ref_2:
-                                pass
-                            else:
-                                decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref] = \
-                                    model.addVar(vtype=GRB.INTEGER,
-                                                 name="w - " + airport_i_ref + "->" + airport_j_ref)
+                    # Make w_ij a decision variable
+                    for route_ref_2, route_2 in routes_dict.items():
+                        if route_ref == route_ref_2:
+                            pass
+                        else:
+                            decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref] = \
+                                model.addVar(vtype=GRB.INTEGER,
+                                             name="w-" + route_ref + "|" + route_ref_2 + "--" + airport_i_ref + "->" + airport_j_ref)
 
 # ============================================================================= Setting up constraints
 # =========================================================== Demand constraint
@@ -144,7 +144,7 @@ for airport_i_ref, airport_i in airports_dict.items():
             constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] + sum(leg_w_lst)
 
         model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
-                        name="Constraint - Total demand - " + airport_i_ref + "->" + airport_j_ref)
+                        name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
 
 # ----------- Direct leg demand
 # ... for every possible leg (i,j in N)
@@ -160,7 +160,7 @@ for airport_i_ref, airport_i in airports_dict.items():
 
             model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref]
                             * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
-                            name="Constraint - Direct demand - " + route_ref + " - " + airport_i_ref + "->" + airport_j_ref)
+                            name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
 # ----------- Indirect leg demand
 # ... for every possible leg (i,j in N)
@@ -183,7 +183,7 @@ for airport_i_ref, airport_i in airports_dict.items():
                     model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref]
                                     * routes_dict[route_ref]["path df"].loc[airport_i_ref, hub_ref]
                                     * routes_dict[route_ref_2]["path df"].loc[hub_ref, airport_j_ref],
-                                    name="Constraint - Indirect demand - " + route_ref + "|" + route_ref_2 + " - " + airport_i_ref + "->" + airport_j_ref)
+                                    name="Constraint-Indirect_demand-" + route_ref + "|" + route_ref_2 + "--" + airport_i_ref + "->" + airport_j_ref)
 
 # =========================================================== Flow constraint
 """
@@ -235,7 +235,7 @@ for route_ref, route in routes_dict.items():
                         * aircraft_dict[aircraft_ref]["seats"] \
                         * average_load_factor
 
-    model.addConstr(constraint_l <= constraint_r, "Constraint - Flow (from hub) - " + route_ref)
+    model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(from_hub)-" + route_ref)
 
 
 # ----------- Between spokes constraint
@@ -273,7 +273,7 @@ for route_ref, route in routes_dict.items():
                             * aircraft_dict[aircraft_ref]["seats"] \
                             * average_load_factor
 
-        model.addConstr(constraint_l <= constraint_r, "Constraint - Flow (between spokes) - " + route_ref)
+        model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(between_spokes)-" + route_ref)
 
 # ----------- To hub constraint
 # ... for every route (r)
@@ -305,7 +305,7 @@ for route_ref, route in routes_dict.items():
                         * aircraft_dict[aircraft_ref]["seats"] \
                         * average_load_factor
 
-    model.addConstr(constraint_l <= constraint_r, "Constraint - Flow (to hub) - " + route_ref)
+    model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(to_hub)-" + route_ref)
 
 
 # =========================================================== Aircraft utilisation constraint
@@ -383,4 +383,5 @@ model.setObjective(objective_function, GRB.MAXIMIZE)
 
 # ============================================================================= Optimise model
 model.write("Model.lp")
+print("Model compiled!!!")
 # model.optimize()
