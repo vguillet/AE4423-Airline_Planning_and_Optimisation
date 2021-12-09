@@ -200,5 +200,6 @@ def run_model_1():
 
     # ============================================================================= Optimise model
     model.write("Model_1B.lp")
-    print("Model compiled!!!")
+    print("Model 1 compiled!!!")
     # model.optimize()
+    return
