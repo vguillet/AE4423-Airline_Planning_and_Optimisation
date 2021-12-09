@@ -7,6 +7,9 @@ from copy import deepcopy
 
 from Haversine_function import haversine
 
+USD2EUR = 0.9 # EUR/USD in 2020
+e_eur = 0.07 * USD2EUR # EUR/kWh
+f_eur = 1.42 * USD2EUR # EUR/gallon
 
 def generate_data(question=0):
     """
@@ -229,9 +232,9 @@ def generate_data(question=0):
 
                     time_cost = aircraft["time cost parameter"] * (leg_len/aircraft["speed"])
 
-                    fuel_cost = (aircraft["fuel cost parameter"]*1.42)/1.5 * leg_len
+                    fuel_cost = (aircraft["fuel cost parameter"]*f_eur)/1.5 * leg_len
 
-                    energy_cost = 0.07 * aircraft["batteries energy"] * leg_len/aircraft["max range"]
+                    energy_cost = e_eur * aircraft["batteries energy"] * leg_len/aircraft["max range"]
 
                     if airport_i == hub_ref or airport_j == hub_ref:
                         # fixed_operating_cost + time_cost + fuel_cost are 30% cheaper if departing/arrival airport is hub
