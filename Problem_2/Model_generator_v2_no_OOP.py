@@ -255,7 +255,7 @@ for route_ref, route in routes_dict.items():
             constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, subsequent_ref]
 
         # ... for every precedent_ref node from hub (m in Pri)
-        for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
+        for precedent_ref in routes_dict[route_ref]["precedent nodes"][airport_i_ref]:
             # x_r_mj
             constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[precedent_ref, airport_j_ref]
 
@@ -285,8 +285,7 @@ for route_ref, route in routes_dict.items():
     airport_i_ref = route["path"][2]
     # ------ Left hand of constraint
     # ... for every precedent_ref node from hub (m in Pri)
-    print(airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]])
-    for precedent_ref in airports_dict[routes_dict[route_ref]["precedent nodes"][airport_i_ref]]:
+    for precedent_ref in routes_dict[route_ref]["precedent nodes"][airport_i_ref]:
         # x_r_mH
         constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[precedent_ref, hub_ref]
 
@@ -319,13 +318,13 @@ for aircraft_ref, aircraft in aircraft_dict.items():
     # ... for every route (r in R)
     for route_ref, route in routes_dict.items():
         constraint_l += (route["length"]/aircraft["speed"]
-                         + aicraft["avg TAT"] * (len(route["path"]-1) + 1.5)
+                         + aircraft["avg TAT"] * (len(route["path"])-1 + 1.5) # one of the airports (hub) has a TAT of +50%
                          + aircraft["extra charging time"]) \
                          * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
 
     constraint_r += max_continuous_operation * decision_variable_dict["aircrafts"][aircraft_ref]["count"]
 
-    model.addConstr(constraint_l <= constraint_r, "Constraint - Utilisation - " + aircraft_ref)
+    model.addConstr(constraint_l <= constraint_r, "Constraint-Utilisation-" + aircraft_ref)
 
 # =========================================================== Aircraft allocation constraints
 '''
@@ -362,7 +361,7 @@ for route_ref, route in routes_dict.items():
     # ... for every aircraft
     for aircraft_ref, aircraft in aircraft_dict.items():
         total_route_cost = 0
-        for i in range(len(route["path"]-1)):
+        for i in range(len(route["path"])-1):
             airport_i_ref = route["path"][i]
             airport_j_ref = route["path"][i+1]
 
@@ -371,12 +370,12 @@ for route_ref, route in routes_dict.items():
         # -> Adding total cost per leg
         objective_function -= total_route_cost \
                               * aircraft["seats"] \
-                              * decision_variable_dict["aircraft"][aircraft_ref]["z"][route_ref]
+                              * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
 
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
     # -> Adding leading cost per week for ac type
-    objective_function -= decision_variable_dict["aircraft"][aircraft_ref]["count"] \
+    objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
                           * aircraft["weekly lease cost"]
 
 # --> Setting objective
