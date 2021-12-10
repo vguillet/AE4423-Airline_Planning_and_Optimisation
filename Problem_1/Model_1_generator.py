@@ -27,7 +27,6 @@ __version__ = '1.1.1'
 hub, hub_ref, max_continuous_operation, average_load_factor, \
 aircraft_dict, airports_dict, distances_df, traffic_df, yield_df = generate_data()
 
-
 # -> Creating model
 model = gp.Model("APO_assignment_model_1B")
 
@@ -120,10 +119,10 @@ for airport_i_ref, airport_i in airports_dict.items():
 
         # for m in N
         for airport_m_ref, airport_m in airports_dict.items():
-            if hub_ref in [airport_i_ref, airport_m_ref]:
+            if hub_ref == airport_j_ref:
                 constraint_l += decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_m_ref]
 
-            if hub_ref in [airport_m_ref, airport_j_ref]:
+            if hub_ref == airport_i_ref:
                 constraint_l += decision_variable_dict["legs"]["w"].loc[airport_m_ref, airport_j_ref]
 
         # ... for every aircraft
@@ -138,7 +137,7 @@ for airport_i_ref, airport_i in airports_dict.items():
 # -----------  Continuity constraint: #AC inbound = #AC outbound C3
 # ... for every i (leg)
 for airport_i_ref, airport_i in airports_dict.items():
-    # ... for every aircraft
+    # ... for every aircraft k in K
     for aircraft_ref, aircraft in aircraft_dict.items():
         constraint_l = gp.LinExpr()
         constraint_r = gp.LinExpr()
@@ -164,6 +163,8 @@ for aircraft_ref, aircraft in aircraft_dict.items():
             constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
                              + aircraft["avg TAT"] + aircraft["avg TAT"] * ((airport_j_ref == hub_ref) * 0.5)) \
                              * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+    # TODO: dubble check LTO = TAT?
+
 
     constraint_r += max_continuous_operation * decision_variable_dict["aircrafts"][aircraft_ref]["count"]
 
@@ -191,6 +192,7 @@ for airport_i_ref, airport_i in airports_dict.items():
                                   * aircraft["seats"] \
                                   * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
 
+            # Lease costs
             objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
                                   * aircraft["weekly lease cost"]
 
@@ -200,4 +202,10 @@ model.setObjective(objective_function, GRB.MAXIMIZE)
 # ============================================================================= Optimise model
 model.write("Model_1B.lp")
 print("Model 1 compiled!!!")
-# model.optimize()
+model.optimize()
+
+model.printStats()
+results = model.getVars()
+for r in results:
+    if r.X != 0:
+        print(r)
