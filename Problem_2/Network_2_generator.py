@@ -195,7 +195,8 @@ def generate_data(question=0):
             # "viability": deepcopy(edges_df),
             "duration": deepcopy(edges_df),
             "total operating cost": deepcopy(edges_df),
-            "yield per RPK": deepcopy(edges_df)}
+            # "yield per RPK": deepcopy(edges_df)
+            }
 
     # -> Create network legs len df
     distances_df = deepcopy(edges_df)
@@ -358,21 +359,7 @@ def generate_data(question=0):
 
 
 if __name__ == "__main__":
-    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df = generate_data()
-
-    # print(ac_dict)
-    # print(airports_lst)
-    # print(distances_df)
-    # print(routes_dict)
-    # print(traffic_df)
-
-    print("\n")
-
-    print("Network nodes count:", len(airports_dict))
-    print("Aircraft type count:", len(ac_dict))
-    print("Possible routes:", len(routes_dict))
-
-    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df = generate_data(
+    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(
         question=1)
 
     # print(ac_dict)

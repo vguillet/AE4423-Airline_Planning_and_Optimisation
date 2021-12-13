@@ -22,10 +22,10 @@ __version__ = '1.1.1'
 
 ################################################################################################################
 
-demand_constraints = True
-capacity_constraints = False
-continuity_constraint = True
-AC_productivity = True
+demand_constraints = 0
+capacity_constraints = 1
+continuity_constraint = 0
+AC_productivity = 0
 
 # =========================================================== Generate data
 hub, hub_ref, max_continuous_operation, average_load_factor, \

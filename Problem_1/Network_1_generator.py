@@ -106,7 +106,8 @@ def generate_data():
         aircraft["legs"] = {"viability": deepcopy(edges_df),
                             "duration": deepcopy(edges_df),
                             "total operating cost": deepcopy(edges_df),
-                            "yield per RPK": deepcopy(edges_df)}
+                            # "yield per RPK": deepcopy(edges_df)
+                            }
 
     # -> Create network legs len df
     distances_df = deepcopy(edges_df)
