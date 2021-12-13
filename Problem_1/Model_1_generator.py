@@ -22,6 +22,10 @@ __version__ = '1.1.1'
 
 ################################################################################################################
 
+demand_constraints = True
+capacity_constraints = False
+continuity_constraint = True
+AC_productivity = True
 
 # =========================================================== Generate data
 hub, hub_ref, max_continuous_operation, average_load_factor, \
@@ -80,96 +84,99 @@ for airport_i_ref, airport_i in airports_dict.items():
 
 # ============================================================================= Setting up constraints
 # =========================================================== Demand constraint
-# ----------- Demand Verification: # PAX <= demand C1
-# ... for every node-node (leg)
-for airport_i_ref, airport_i in airports_dict.items():
-    for airport_j_ref, airport_j in airports_dict.items():
-        constraint_l = gp.LinExpr()
+if demand_constraints:
+    # ----------- Demand Verification: # PAX <= demand C1
+    # ... for every node-node (leg)
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            constraint_l = gp.LinExpr()
 
-        constraint_l += decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref] \
-                        + decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref]
+            constraint_l += decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref] \
+                            + decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref]
 
-        model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
-                        name="Constraint-C1-" + airport_i_ref + "->" + airport_j_ref)
+            model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
+                            name="Constraint-C1-" + airport_i_ref + "->" + airport_j_ref)
 
-# ----------- Demand Verification: # PAX <= demand C1*
-# ... for every node-node (leg)
-for airport_i_ref, airport_i in airports_dict.items():
-    for airport_j_ref, airport_j in airports_dict.items():
-        constraint_l = gp.LinExpr()
+    # ----------- Demand Verification: # PAX <= demand C1*
+    # ... for every node-node (leg)
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            constraint_l = gp.LinExpr()
 
-        constraint_l += decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref]
+            constraint_l += decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref]
 
-        if hub_ref in [airport_i_ref,airport_j_ref]:
-            constraint_r = 0
-        else:
-            constraint_r = traffic_df.loc[airport_i_ref, airport_j_ref]
+            if hub_ref in [airport_i_ref,airport_j_ref]:
+                constraint_r = 0
+            else:
+                constraint_r = traffic_df.loc[airport_i_ref, airport_j_ref]
 
-        model.addConstr(constraint_l <= constraint_r,
-                        name="Constraint-C1*-" + airport_i_ref + "->" + airport_j_ref)
+            model.addConstr(constraint_l <= constraint_r,
+                            name="Constraint-C1*-" + airport_i_ref + "->" + airport_j_ref)
 
 # ----------- Capacity: # PAX in each leg <= seat available per leg C2
-# ... for every node-node (leg)
-for airport_i_ref, airport_i in airports_dict.items():
-    for airport_j_ref, airport_j in airports_dict.items():
-        constraint_l = gp.LinExpr()
-        constraint_r = gp.LinExpr()
+if capacity_constraints:
+    # ... for every node-node (leg)
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            constraint_l = gp.LinExpr()
+            constraint_r = gp.LinExpr()
 
-        constraint_l += decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref]
+            constraint_l += decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref]
 
-        # for m in N
-        for airport_m_ref, airport_m in airports_dict.items():
-            if hub_ref == airport_j_ref:
-                constraint_l += decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_m_ref]
+            # for m in N
+            for airport_m_ref, airport_m in airports_dict.items():
+                if hub_ref == airport_j_ref:
+                    constraint_l += decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_m_ref]
 
-            if hub_ref == airport_i_ref:
-                constraint_l += decision_variable_dict["legs"]["w"].loc[airport_m_ref, airport_j_ref]
+                if hub_ref == airport_i_ref:
+                    constraint_l += decision_variable_dict["legs"]["w"].loc[airport_m_ref, airport_j_ref]
 
-        # ... for every aircraft
-        for aircraft_ref, aircraft in aircraft_dict.items():
-            constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref] \
-                            * aircraft_dict[aircraft_ref]["seats"] \
-                            * average_load_factor
+            # ... for every aircraft
+            for aircraft_ref, aircraft in aircraft_dict.items():
+                constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref] \
+                                * aircraft_dict[aircraft_ref]["seats"] \
+                                * average_load_factor
 
-        model.addConstr(constraint_l <= constraint_r,
-                        name="Constraint-C2-" + airport_i_ref + "->" + airport_j_ref)
+            model.addConstr(constraint_l <= constraint_r,
+                            name="Constraint-C2-" + airport_i_ref + "->" + airport_j_ref)
 
 # -----------  Continuity constraint: #AC inbound = #AC outbound C3
-# ... for every i (leg)
-for airport_i_ref, airport_i in airports_dict.items():
-    # ... for every aircraft k in K
+if continuity_constraint:
+    # ... for every i (leg)
+    for airport_i_ref, airport_i in airports_dict.items():
+        # ... for every aircraft k in K
+        for aircraft_ref, aircraft in aircraft_dict.items():
+            constraint_l = gp.LinExpr()
+            constraint_r = gp.LinExpr()
+
+            # for j in N
+            for airport_j_ref, airport_j in airports_dict.items():
+                constraint_l += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+                constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_j_ref, airport_i_ref]
+
+            model.addConstr(constraint_l == constraint_r,
+                            name="Constraint-C3-" + airport_i_ref + "-" + aircraft_ref)
+
+if AC_productivity:
+    # ----------- AC Productivity: hours of operation <= BT * #AC C4
+    # ... for every aircraft
     for aircraft_ref, aircraft in aircraft_dict.items():
         constraint_l = gp.LinExpr()
         constraint_r = gp.LinExpr()
 
-        # for j in N
-        for airport_j_ref, airport_j in airports_dict.items():
-            constraint_l += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
-            constraint_r += decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_j_ref, airport_i_ref]
-
-        model.addConstr(constraint_l == constraint_r,
-                        name="Constraint-C3-" + airport_i_ref + "-" + aircraft_ref)
-
-
-# ----------- AC Productivity: hours of operation <= BT * #AC C4
-# ... for every aircraft
-for aircraft_ref, aircraft in aircraft_dict.items():
-    constraint_l = gp.LinExpr()
-    constraint_r = gp.LinExpr()
-
-    # ... for every node-node (leg)
-    for airport_i_ref, airport_i in airports_dict.items():
-        for airport_j_ref, airport_j in airports_dict.items():
-            constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
-                             + aircraft["avg TAT"] + aircraft["avg TAT"] * ((airport_j_ref == hub_ref) * 0.5)) \
-                             * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
-    # TODO: dubble check LTO = TAT?
+        # ... for every node-node (leg)
+        for airport_i_ref, airport_i in airports_dict.items():
+            for airport_j_ref, airport_j in airports_dict.items():
+                constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
+                                 + aircraft["avg TAT"] + aircraft["avg TAT"] * ((airport_j_ref == hub_ref) * 0.5)) \
+                                 * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+        # TODO: dubble check LTO = TAT?
 
 
-    constraint_r += max_continuous_operation * decision_variable_dict["aircrafts"][aircraft_ref]["count"]
+        constraint_r += max_continuous_operation * decision_variable_dict["aircrafts"][aircraft_ref]["count"]
 
-    model.addConstr(constraint_l <= constraint_r,
-                    name="Constraint-C4-" + aircraft_ref)
+        model.addConstr(constraint_l <= constraint_r,
+                        name="Constraint-C4-" + aircraft_ref)
 
 ### C5 is taken care of in the variable generation
 ### C6 is not relevant since we have no budget

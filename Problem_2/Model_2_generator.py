@@ -382,4 +382,4 @@ model.setObjective(objective_function, GRB.MAXIMIZE)
 # ============================================================================= Optimise model
 model.write("Model.lp")
 print("Model compiled!!!")
-# model.optimize()
+model.optimize()
