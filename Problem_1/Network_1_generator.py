@@ -136,25 +136,25 @@ def generate_data():
                         # -> Mark leg as viable
                         aircraft["legs"]["viability"].loc[airport_i_ref, airport_j_ref] = 1
 
-                    # -> Solve for leg duration
-                    aircraft["legs"]["duration"].loc[airport_i_ref, airport_j_ref] = \
-                        leg_len / aircraft["speed"]
+                        # -> Solve for leg duration
+                        aircraft["legs"]["duration"].loc[airport_i_ref, airport_j_ref] = \
+                            leg_len / aircraft["speed"]
 
-                    # -> Solve for leg total cost
-                    fixed_operating_cost = aircraft["fixed operating cost"]
+                        # -> Solve for leg total cost
+                        fixed_operating_cost = aircraft["fixed operating cost"]
 
-                    time_cost = aircraft["time cost parameter"] * (leg_len/aircraft["speed"])
+                        time_cost = aircraft["time cost parameter"] * (leg_len/aircraft["speed"])
 
-                    fuel_cost = (aircraft["fuel cost parameter"]*f_eur)/1.5 * leg_len
+                        fuel_cost = (aircraft["fuel cost parameter"]*f_eur)/1.5 * leg_len
 
-                    if airport_i == hub_ref or airport_j == hub_ref:
-                        # fixed_operating_cost + time_cost + fuel_cost are 30% cheaper if departing/arrival airport is hub
-                        aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
-                            (fixed_operating_cost + time_cost + fuel_cost) * 0.7
+                        if airport_i == hub_ref or airport_j == hub_ref:
+                            # fixed_operating_cost + time_cost + fuel_cost are 30% cheaper if departing/arrival airport is hub
+                            aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
+                                (fixed_operating_cost + time_cost + fuel_cost) * 0.7
 
-                    else:
-                        aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
-                            (fixed_operating_cost + time_cost + fuel_cost)
+                        else:
+                            aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
+                                (fixed_operating_cost + time_cost + fuel_cost)
 
     # =========================================================== Import network traffic
     traffic_df = pd.read_csv("Problem_1/Demand_forecast_2030.csv", header=[0])

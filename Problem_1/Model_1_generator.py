@@ -22,10 +22,10 @@ __version__ = '1.1.1'
 
 ################################################################################################################
 
-demand_constraints = 0
+demand_constraints = 1
 capacity_constraints = 1
-continuity_constraint = 0
-AC_productivity = 0
+continuity_constraint = 1
+AC_productivity = 1
 
 # =========================================================== Generate data
 hub, hub_ref, max_continuous_operation, average_load_factor, \
@@ -181,7 +181,6 @@ if AC_productivity:
 ### C5 is taken care of in the variable generation
 ### C6 is not relevant since we have no budget
 
-
 # =========================================================== Building objective function
 # --> Initiating objective function linear expression
 objective_function = gp.LinExpr()
@@ -192,12 +191,11 @@ for airport_i_ref, airport_i in airports_dict.items():
         objective_function += yield_df.loc[airport_i_ref, airport_j_ref] \
                               * distances_df.loc[airport_i_ref, airport_j_ref] \
                               * (decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref]
-                               + decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref])
+                                 + decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref])
 
         # ... for every aircraft
         for aircraft_ref, aircraft in aircraft_dict.items():
-            objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref]\
-                                  * aircraft["seats"] \
+            objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] \
                                   * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
 
             # Lease costs
@@ -207,13 +205,51 @@ for airport_i_ref, airport_i in airports_dict.items():
 # --> Setting objective
 model.setObjective(objective_function, GRB.MAXIMIZE)
 
+
+# '''TEST'''
+# test_yield = {}
+# test_operation_cost = {}
+# test_leas_cost = {}
+# for aircraft_ref, aircraft in aircraft_dict.items():
+#     test_yield[aircraft_ref] = deepcopy(edges_df)
+#     test_operation_cost[aircraft_ref] = deepcopy(edges_df)
+#     test_leas_cost[aircraft_ref] = deepcopy(edges_df)
+#
+# for airport_i_ref, airport_i in airports_dict.items():
+#     for airport_j_ref, airport_j in airports_dict.items():
+#         # ... for every aircraft
+#         for aircraft_ref, aircraft in aircraft_dict.items():
+#             test_yield[aircraft_ref].loc[airport_i_ref, airport_j_ref] = yield_df.loc[airport_i_ref, airport_j_ref] \
+#                                                                   * distances_df.loc[airport_i_ref, airport_j_ref] * \
+#                                                                   (aircraft["seats"]*average_load_factor*50)
+#
+#             test_operation_cost[aircraft_ref].loc[airport_i_ref, airport_j_ref] = aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref]*50
+#                                   # * aircraft["seats"]
+#
+#             # Lease costs
+#             test_leas_cost[aircraft_ref].loc[airport_i_ref, airport_j_ref] = aircraft["weekly lease cost"]
+
+# for aircraft_ref, aircraft in aircraft_dict.items():
+#     print('')
+#     print(f'----------------{aircraft_ref}:-------------------')
+#     print((test_operation_cost[aircraft_ref]+test_leas_cost[aircraft_ref])/test_yield[aircraft_ref])
+#     print(f'Yield:')
+#     print(test_yield[aircraft_ref])
+#     print(f'Operation costs:')
+#     print(test_operation_cost[aircraft_ref])
+#     print(f'Leas costs:')
+#     print(test_leas_cost[aircraft_ref])
+#     print(f'duration{aircraft["legs"]["duration"]}')
+# '''TEST'''
+
+
 # ============================================================================= Optimise model
 model.write("Model_1B.lp")
 print("Model 1 compiled!!!")
 model.optimize()
 
 model.printStats()
-results = model.getVars()
-for r in results:
-    if r.X != 0:
-        print(r)
+# results = model.getVars()
+# for r in results:
+#     if r.X != 0:
+#         print(r)

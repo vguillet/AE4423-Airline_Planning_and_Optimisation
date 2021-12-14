@@ -22,10 +22,10 @@ __version__ = '1.1.1'
 ################################################################################################################
 
 demand_constraints = 1
-flow_constraints_1 = 0
-flow_constraints_2 = 0
-flow_constraints_3 = 0
-utilisation_constraint = 0
+flow_constraints_1 = 1
+flow_constraints_2 = 1
+flow_constraints_3 = 1
+utilisation_constraint = 1
 
 # =========================================================== Generate data
 hub, hub_ref, max_continuous_operation, average_load_factor, \
@@ -383,10 +383,12 @@ for route_ref, route in routes_dict.items():
             airport_j_ref = route["path"][i+1]
 
             total_route_cost += aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref]
+            print(total_route_cost)
+
+        print("\n")
 
         # -> Adding total cost per leg
         objective_function -= total_route_cost \
-                              * aircraft["seats"] \
                               * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
 
 # ... for every aircraft
