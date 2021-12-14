@@ -140,6 +140,7 @@ def generate_data(question=0):
 
     if include_electric_ac:
         ac_dict = {**fuel_ac, **electric_ac}
+        # ac_dict = fuel_ac
 
     else:
         ac_dict = fuel_ac
@@ -178,6 +179,25 @@ def generate_data(question=0):
                                            "lon": row["Longitude (deg)"],
                                            "runway": row["Runway (m)"],
                                            "runway compatibility": runway_compatibility}
+
+    # ======================================================================================================
+    # ======================================================================================================
+    # ======================================================================================================
+    # TODO: Remove once debugged
+    
+    airports_included = 5
+    new_airport_dict = {}
+
+    for airport_ref in airports_dict.keys():
+        airports_included -= 1
+        if airports_included > 0:
+            new_airport_dict[airport_ref] = airports_dict[airport_ref]
+
+    airports_dict = new_airport_dict
+
+    # ======================================================================================================
+    # ======================================================================================================
+    # ======================================================================================================
 
     # =========================================================== Prepare network edge dataframe
     # -> Create network edge dataframe

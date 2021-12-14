@@ -22,7 +22,7 @@ __version__ = '1.1.1'
 ################################################################################################################
 
 demand_constraints = 1
-flow_constraints_1 = 1
+flow_constraints_1 = 0
 flow_constraints_2 = 0
 flow_constraints_3 = 0
 utilisation_constraint = 0

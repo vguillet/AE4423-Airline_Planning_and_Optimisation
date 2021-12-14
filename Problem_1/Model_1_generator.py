@@ -182,6 +182,7 @@ if AC_productivity:
 ### C6 is not relevant since we have no budget
 
 
+# =========================================================== Building objective function
 # --> Initiating objective function linear expression
 objective_function = gp.LinExpr()
 
@@ -189,8 +190,8 @@ objective_function = gp.LinExpr()
 for airport_i_ref, airport_i in airports_dict.items():
     for airport_j_ref, airport_j in airports_dict.items():
         objective_function += yield_df.loc[airport_i_ref, airport_j_ref] \
-                              * distances_df.loc[airport_i_ref, airport_j_ref] * \
-                              (decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref]
+                              * distances_df.loc[airport_i_ref, airport_j_ref] \
+                              * (decision_variable_dict["legs"]["x"].loc[airport_i_ref, airport_j_ref]
                                + decision_variable_dict["legs"]["w"].loc[airport_i_ref, airport_j_ref])
 
         # ... for every aircraft
