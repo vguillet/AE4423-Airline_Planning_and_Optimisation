@@ -393,7 +393,7 @@ for route_ref, route in routes_dict.items():
 
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
-    # -> Adding leading cost per week for ac type
+    # Lease costs
     objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
                           * aircraft["weekly lease cost"]
 

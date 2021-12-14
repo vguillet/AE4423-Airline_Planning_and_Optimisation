@@ -16,6 +16,7 @@ def generate_data():
     # -> Set Network hub
     hub = "Malmö"
     hub_ref = "ESMS"
+    # hub_ref = "ESSA"
 
     # -> Set fleet properties
     max_continuous_operation = 10 * 7
@@ -168,3 +169,4 @@ if __name__ == "__main__":
 
     print("Network nodes count:", len(airports_dict))
     print("Aircraft type count:", len(ac_dict))
+    print(distances_df.to_string())
