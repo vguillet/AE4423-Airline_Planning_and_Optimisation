@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 from copy import deepcopy
+import pickle
 
 # Libs
 import pandas as pd
@@ -28,8 +29,9 @@ flow_constraints_3 = 1
 utilisation_constraint = 1
 
 # =========================================================== Generate data
+airports_included = 5
 hub, hub_ref, max_continuous_operation, average_load_factor, \
-aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(question=2)
+aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(question=2,airports_included=airports_included)
 
 # -> Creating model
 model = gp.Model("APO_assignment_model")
@@ -129,10 +131,13 @@ note: each constraint sums flows across aircraft types per routes, legs are dire
 :return:
 """
 if demand_constraints:
-    print("----------- Overall leg demand")
+    print("----------------> Overall leg demand")
     # ----------- Overall leg demand
     # ... for every possible leg (i,j in N)
+    progress = 0
     for airport_i_ref, airport_i in airports_dict.items():
+        print(f'\r{round(progress/airports_included*100,2)}%',end='')
+        progress += 1
         for airport_j_ref, airport_j in airports_dict.items():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg
             constraint_l = gp.LinExpr()
@@ -153,7 +158,7 @@ if demand_constraints:
             model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
                             name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
 
-    print("----------- Direct leg demand")
+    print("----------------> Direct leg demand")
     # ----------- Direct leg demand
     # ... for every possible leg (i,j in N)
     for airport_i_ref, airport_i in airports_dict.items():
@@ -170,10 +175,13 @@ if demand_constraints:
                                 * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
                                 name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
-    print("----------- Indirect leg demand")
+    print("----------------> Indirect leg demand")
     # ----------- Indirect leg demand
     # ... for every possible leg (i,j in N)
+    progress = 0
     for airport_i_ref, airport_i in airports_dict.items():
+        print(f'\r{round(progress/airports_included*100,2)}%',end='')
+        progress += 1
         for airport_j_ref, airport_j in airports_dict.items():
 
             # ... for every route (r in R)
@@ -216,7 +224,7 @@ note: each constraint sums flows across aircraft types
 """
 
 if flow_constraints_1:
-    print("----------- From hub constraint")
+    print("----------------> From hub constraint")
     # ----------- From hub constraint
     # ... for every route (r in R)
     for route_ref, route in routes_dict.items():
@@ -249,7 +257,7 @@ if flow_constraints_1:
         model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(from_hub)-" + route_ref)
 
 if flow_constraints_2:
-    print("----------- Between spokes constraint")
+    print("----------------> Between spokes constraint")
     # ----------- Between spokes constraint
     # ... for every route greater than 2 nodes (r in R)
     for route_ref, route in routes_dict.items():
@@ -288,7 +296,7 @@ if flow_constraints_2:
             model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(between_spokes)-" + route_ref)
 
 if flow_constraints_3:
-    print("----------- To hub constraint")
+    print("----------------> To hub constraint")
     # ----------- To hub constraint
     # ... for every route (r)
     for route_ref, route in routes_dict.items():
@@ -324,7 +332,7 @@ if flow_constraints_3:
 
 # =========================================================== Aircraft utilisation constraint
 if utilisation_constraint:
-    print("-------------Aircraft utilisation constraint")
+    print("----------------> Aircraft utilisation constraint")
     # ... for every aircraft (k in K)
     for aircraft_ref, aircraft in aircraft_dict.items():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per aircraft type
@@ -351,7 +359,7 @@ during data preprocessing in route generation). If a route is not viable, corres
 # =========================================================== Fleet budget constraint
 
 # =========================================================== Building objective function
-print("Building objective function...")
+print("----------------> Building objective function...")
 # --> Initiating objective function linear expression
 objective_function = gp.LinExpr()
 
@@ -383,9 +391,6 @@ for route_ref, route in routes_dict.items():
             airport_j_ref = route["path"][i+1]
 
             total_route_cost += aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref]
-            print(total_route_cost)
-
-        print("\n")
 
         # -> Adding total cost per leg
         objective_function -= total_route_cost \
@@ -402,8 +407,9 @@ print("--> Setting objective")
 model.setObjective(objective_function, GRB.MAXIMIZE)
 
 # ============================================================================= Optimise model
-print("writ_mode....")
+print("write_mode....")
 model.write("Model.lp")
-print("Model compiled!!!")
+print("\nModel compiled!!!")
+
 print("optimize")
 model.optimize()

@@ -196,11 +196,11 @@ for airport_i_ref, airport_i in airports_dict.items():
             objective_function -= aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] \
                                   * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
 
-# ... for every aircraft
-for aircraft_ref, aircraft in aircraft_dict.items():
-    # Lease costs
-    objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
-                          * aircraft["weekly lease cost"]
+# # ... for every aircraft
+# for aircraft_ref, aircraft in aircraft_dict.items():
+#     # Lease costs
+#     objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \
+#                           * aircraft["weekly lease cost"]
 
 # --> Setting objective
 model.setObjective(objective_function, GRB.MAXIMIZE)
@@ -250,31 +250,32 @@ model.optimize()
 
 model.printStats()
 
-for aircraft_ref, aircraft in aircraft_dict.items():
-    constraint_l = 0
-    constraint_r = 0
+# for aircraft_ref, aircraft in aircraft_dict.items():
+#     constraint_l = 0
+#     constraint_r = 0
+#
+#     # ... for every node-node (leg)
+#     for airport_i_ref, airport_i in airports_dict.items():
+#         for airport_j_ref, airport_j in airports_dict.items():
+#             # constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
+#             #                  + aircraft["avg TAT"]) + aircraft["avg TAT"] * ((airport_j_ref == hub_ref) * 0.5)) \
+#             #                  * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+#
+#             constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
+#                              + aircraft["avg TAT"]) \
+#                             * (decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref].x if type(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]) != int else 0)
+#             # print(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref])
+#
+#     constraint_r += max_continuous_operation * (decision_variable_dict["aircrafts"][aircraft_ref]["count"].x if type(decision_variable_dict["aircrafts"][aircraft_ref]["count"]) != int else 0)
+#
+#     print("\n")
+#     print(decision_variable_dict["aircrafts"][aircraft_ref]["count"])
+#
+#     print(f"constraint_l:{constraint_l}")
+#     print(f"constraint_r:{constraint_r}")
 
-    # ... for every node-node (leg)
-    for airport_i_ref, airport_i in airports_dict.items():
-        for airport_j_ref, airport_j in airports_dict.items():
-            # constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
-            #                  + aircraft["avg TAT"]) + aircraft["avg TAT"] * ((airport_j_ref == hub_ref) * 0.5)) \
-            #                  * decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+results = model.getVars()
 
-            constraint_l += (distances_df.loc[airport_i_ref, airport_j_ref] / aircraft["speed"]
-                             + aircraft["avg TAT"]) \
-                            * (decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref].x if type(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]) != int else 0)
-            print(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref])
-
-    constraint_r += max_continuous_operation * (decision_variable_dict["aircrafts"][aircraft_ref]["count"].x if type(decision_variable_dict["aircrafts"][aircraft_ref]["count"]) != int else 0)
-
-    print("\n")
-    print(decision_variable_dict["aircrafts"][aircraft_ref]["count"])
-
-    print(f"constraint_l:{constraint_l}")
-    print(f"constraint_r:{constraint_r}")
-
-# results = model.getVars()
-# for r in results:
-#     if r.X != 0:
-#         print(r)
+for r in results:
+    if r.VarName[0] == 'z':
+        print(r)

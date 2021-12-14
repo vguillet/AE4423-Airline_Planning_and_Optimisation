@@ -12,7 +12,7 @@ e_eur = 0.07 * USD2EUR  # EUR/kWh
 f_eur = 1.42 * USD2EUR  # EUR/gallon
 
 
-def generate_data(question=0):
+def generate_data(question=0, airports_included=15):
     """
     Data structure:"
 
@@ -140,7 +140,6 @@ def generate_data(question=0):
 
     if include_electric_ac:
         ac_dict = {**fuel_ac, **electric_ac}
-        # ac_dict = fuel_ac
 
     else:
         ac_dict = fuel_ac
@@ -185,7 +184,6 @@ def generate_data(question=0):
     # ======================================================================================================
     # TODO: Remove once debugged
 
-    airports_included = 5
     new_airport_dict = {}
 
     for airport_ref in airports_dict.keys():
@@ -194,6 +192,7 @@ def generate_data(question=0):
             new_airport_dict[airport_ref] = airports_dict[airport_ref]
 
     airports_dict = new_airport_dict
+    print(airports_dict.keys())
 
     # ======================================================================================================
     # ======================================================================================================

@@ -1,8 +1,7 @@
 \ Model APO_assignment_model_1B
 \ LP format - for model browsing. Use MPS format to capture full model detail.
 Maximize
-  - 15000 #_AC_1 - 34000 #_AC_2 - 80000 #_AC_3
-   + 84.37528486248382 x-ESMS->ESPA + 75.93775637623544 w-ESMS->ESPA
+  84.37528486248382 x-ESMS->ESPA + 75.93775637623544 w-ESMS->ESPA
    - 2977.880614438926 z-AC_1--ESMS->ESPA
    - 3801.80352465981 z-AC_2--ESMS->ESPA
    - 7102.24889350591 z-AC_3--ESMS->ESPA + 49.45874208802668 x-ESMS->ESSA
