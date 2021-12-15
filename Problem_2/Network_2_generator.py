@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from Haversine_function import haversine
 
-USD2EUR = 0.9  # EUR/USD in 2020
+USD2EUR = 1  # EUR/USD in 2020
 e_eur = 0.07 * USD2EUR  # EUR/kWh
 f_eur = 1.42 * USD2EUR  # EUR/gallon
 
