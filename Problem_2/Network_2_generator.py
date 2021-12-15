@@ -188,7 +188,7 @@ def generate_data(question=0, airports_included=15):
 
     for airport_ref in airports_dict.keys():
         airports_included -= 1
-        if airports_included > 0:
+        if airports_included >= 0:
             new_airport_dict[airport_ref] = airports_dict[airport_ref]
 
     airports_dict = new_airport_dict
