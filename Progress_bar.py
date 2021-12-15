@@ -24,7 +24,8 @@ class Progress_bar():
 
         dt = current_time() - self.t_start
 
-        self.average_speed = self.status / dt
+        if dt != 0:
+            self.average_speed = self.status / dt
 
         if self.not_done:
             self.print_bar()
