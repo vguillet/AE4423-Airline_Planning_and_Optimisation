@@ -16,6 +16,7 @@ from gurobipy import GRB
 
 # Own modules
 from Problem_2.Network_2_generator import generate_data
+from Progress_bar import Progress_bar
 
 __version__ = '1.1.1'
 
@@ -29,7 +30,8 @@ flow_constraints_3 = 1
 utilisation_constraint = 1
 
 # =========================================================== Generate data
-airports_included = 5
+display_progress_bars = True
+airports_included = 15
 hub, hub_ref, max_continuous_operation, average_load_factor, \
 aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(question=2,airports_included=airports_included)
 
@@ -53,10 +55,12 @@ decision_variable_dict = {"aircrafts": {},
                           "routes": {}}
 
 print("----------------> Creating structure")
+pb = Progress_bar(len(routes_dict.keys())+len(aircraft_dict.keys()))
 # ----------------> Creating structure
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
-
+    if display_progress_bars:
+        pb.update()
     # -> Adding aircraft count decision variable
     decision_variable_dict["aircrafts"][aircraft_ref] = {"z": {},
                                                          "count": model.addVar(vtype=GRB.INTEGER,
@@ -67,16 +71,20 @@ for aircraft_ref, aircraft in aircraft_dict.items():
 
 # ... for every route
 for route_ref, route in routes_dict.items():
+    if display_progress_bars:
+        pb.update()
     decision_variable_dict["routes"][route_ref] = {"x": deepcopy(edges_df),
                                                    "w": {}}
     for route_ref_2, route_2 in routes_dict.items():
         decision_variable_dict["routes"][route_ref]["w"][route_ref_2] = deepcopy(edges_df)
 
 print("----------------> Filling x/w/z decision variables")
+pb = Progress_bar(len(routes_dict.keys()))
 # ----------------> Filling x/w/z decision variables
 # ... for every route
 for route_ref, route in routes_dict.items():
-
+    if display_progress_bars:
+        pb.update()
     # ... for every aircraft
     for aircraft_ref, aircraft in aircraft_dict.items():
 
@@ -132,13 +140,13 @@ note: each constraint sums flows across aircraft types per routes, legs are dire
 """
 if demand_constraints:
     print("----------------> Overall leg demand")
+    pb = Progress_bar(len(airports_dict.keys())**2)
     # ----------- Overall leg demand
     # ... for every possible leg (i,j in N)
-    progress = 0
     for airport_i_ref, airport_i in airports_dict.items():
-        print(f'\r{round(progress/airports_included*100,2)}%',end='')
-        progress += 1
         for airport_j_ref, airport_j in airports_dict.items():
+            if display_progress_bars:
+                pb.update()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg
             constraint_l = gp.LinExpr()
 
@@ -159,11 +167,13 @@ if demand_constraints:
                             name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
 
     print("----------------> Direct leg demand")
+    pb = Progress_bar(len(airports_dict.keys())**2)
     # ----------- Direct leg demand
     # ... for every possible leg (i,j in N)
     for airport_i_ref, airport_i in airports_dict.items():
         for airport_j_ref, airport_j in airports_dict.items():
-
+            if display_progress_bars:
+                pb.update()
             # ... for every route (r in R)
             for route_ref, route in routes_dict.items():
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route
@@ -176,14 +186,13 @@ if demand_constraints:
                                 name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
     print("----------------> Indirect leg demand")
+    pb = Progress_bar(len(airports_dict.keys())**2)
     # ----------- Indirect leg demand
     # ... for every possible leg (i,j in N)
-    progress = 0
     for airport_i_ref, airport_i in airports_dict.items():
-        print(f'\r{round(progress/airports_included*100,2)}%',end='')
-        progress += 1
         for airport_j_ref, airport_j in airports_dict.items():
-
+            if display_progress_bars:
+                pb.update()
             # ... for every route (r in R)
             for route_ref, route in routes_dict.items():
 
@@ -225,9 +234,12 @@ note: each constraint sums flows across aircraft types
 
 if flow_constraints_1:
     print("----------------> From hub constraint")
+    pb = Progress_bar(len(routes_dict.keys()))
     # ----------- From hub constraint
     # ... for every route (r in R)
     for route_ref, route in routes_dict.items():
+        if display_progress_bars:
+            pb.update()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per route
         constraint_l = gp.LinExpr()
         constraint_r = gp.LinExpr()
@@ -258,9 +270,12 @@ if flow_constraints_1:
 
 if flow_constraints_2:
     print("----------------> Between spokes constraint")
+    pb = Progress_bar(len(routes_dict.keys()))
     # ----------- Between spokes constraint
     # ... for every route greater than 2 nodes (r in R)
     for route_ref, route in routes_dict.items():
+        if display_progress_bars:
+            pb.update()
         if len(route["path"]) < 2:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per route with more than 2 nodes
             constraint_l = gp.LinExpr()
@@ -297,9 +312,12 @@ if flow_constraints_2:
 
 if flow_constraints_3:
     print("----------------> To hub constraint")
+    pb = Progress_bar(len(routes_dict.keys()))
     # ----------- To hub constraint
     # ... for every route (r)
     for route_ref, route in routes_dict.items():
+        if display_progress_bars:
+            pb.update()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per route
         constraint_l = gp.LinExpr()
         constraint_r = gp.LinExpr()
@@ -333,8 +351,11 @@ if flow_constraints_3:
 # =========================================================== Aircraft utilisation constraint
 if utilisation_constraint:
     print("----------------> Aircraft utilisation constraint")
+    pb = Progress_bar(len(aircraft_dict.keys()))
     # ... for every aircraft (k in K)
     for aircraft_ref, aircraft in aircraft_dict.items():
+        if display_progress_bars:
+            pb.update()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per aircraft type
         constraint_l = gp.LinExpr()
         constraint_r = gp.LinExpr()
@@ -360,12 +381,17 @@ during data preprocessing in route generation). If a route is not viable, corres
 
 # =========================================================== Building objective function
 print("----------------> Building objective function...")
+pb = Progress_bar(len(routes_dict.keys()))
+
+
 # --> Initiating objective function linear expression
 objective_function = gp.LinExpr()
 
 # --> Adding decision variables
 # ... for every route
 for route_ref, route in routes_dict.items():
+    if display_progress_bars:
+        pb.update()
     # ... for every leg making up the route
     for airport_i_ref, airport_i in airports_dict.items():
         for airport_j_ref, airport_j in airports_dict.items():
