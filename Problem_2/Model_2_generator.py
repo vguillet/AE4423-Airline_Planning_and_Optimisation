@@ -522,9 +522,9 @@ for i in total_capacity.index:
         sum_cap += total_capacity.loc[i, j]
 
 sum_dem = 0
-for i in demand_df.index:
-    for j in demand_df.columns:
-        sum_dem += demand_df.loc[i, j]
+for i in flow_x.columns:
+    for j in flow_x.index:
+        sum_dem += demand_df.loc[i,j]
 
 sum_flow = 0
 for i in flow_x.index:

@@ -1,3 +1,29 @@
+Cutting planes:
+  Gomory: 20
+  Implied bound: 7
+  Clique: 2
+  MIR: 81
+  StrongCG: 6
+  Flow cover: 5
+  Relax-and-lift: 5
+
+Explored 2012 nodes (18503 simplex iterations) in 2.44 seconds (0.71 work units)
+Thread count was 8 (of 8 available processors)
+
+Solution count 10: 39359.8 38884.6 38807.6 ... 31623.2
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 3.935981558294e+04, best bound 3.935981558294e+04, gap 0.0000%
+
+Statistics for modelAPO_assignment_model_1B:
+  Linear constraint matrix    : 498 Constrs, 731 Vars, 2313 NZs
+  Variable types              : 0 Continuous,
+731 Integer
+  Matrix coefficient range    : [ 0.511052, 120 ]
+  Objective coefficient range : [ 15.7102, 80000 ]
+  Variable bound range        : [ 0, 0 ]
+  RHS coefficient range       : [ 2, 570 ]
+
 ===========================================================================================================
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_x dataframe
