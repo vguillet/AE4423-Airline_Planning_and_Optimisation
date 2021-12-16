@@ -14,7 +14,7 @@ from Problem_1.Network_1_generator import generate_data
 
 # model = gp.Model("APO_assignment_model")
 
-model = gp.read("Model.lp")
+model = gp.read("Model_2.lp")
 
 print("optimize")
 model.optimize()

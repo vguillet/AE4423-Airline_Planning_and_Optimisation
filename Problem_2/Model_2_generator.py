@@ -447,7 +447,7 @@ model.setObjective(objective_function, GRB.MAXIMIZE)
 
 # ============================================================================= Optimise model
 print("write_mode....")
-model.write("Model.lp")
+model.write("Model_2.lp")
 print("\nModel compiled!!!")
 
 print("optimize")
@@ -520,7 +520,7 @@ for i in flow_x.columns:
         else:   # Excess capacity
             spoilage += abs(diff)
 
-print('\nTotal flow:',sum_flow)
+print('\nTotal flow:', sum_flow)
 print('Total capacity:', sum_cap)
 print('Total demand:', sum_dem)
 print("\nSpillage:", spillage)
