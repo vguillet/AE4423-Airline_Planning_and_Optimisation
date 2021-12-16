@@ -10,7 +10,6 @@ USD2EUR = 1           # EUR/USD in 2020
 e_eur = 0.07 * USD2EUR  # EUR/kWh
 f_eur = 1.42 * USD2EUR  # EUR/gallon
 
-
 def haversine(coord1: tuple, coord2: tuple):
     deg2rad = pi / 180
     R = 6371
@@ -27,15 +26,12 @@ def haversine(coord1: tuple, coord2: tuple):
     term_2 = cos(phi_i) * cos(phi_j) * (sin((lambda_i - lambda_j) / 2)) ** 2
 
     km = 2 * R * arcsin(sqrt(term_1 + term_2))
-
     return 0, km
-
 
 def generate_data():
     # -> Set Network hub
     hub = "Malmö"
     hub_ref = "ESMS"
-    # hub_ref = "ESSA"
 
     # -> Set fleet properties
     max_continuous_operation = 10 * 7
@@ -112,7 +108,7 @@ def generate_data():
                                            "runway compatibility": runway_compatibility}
     
     # =========================================================== Prepare network edge dataframe
-    # -> Create network edge dataframe
+    # -> Create empty network edge dataframe
     edges_df = pd.DataFrame(0,
                             index=np.arange(len(airports_dict)),
                             columns=np.arange(len(airports_dict)))

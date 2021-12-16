@@ -117,12 +117,11 @@ class Demand_forcast():
     def print(self):
         print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ demand_forecast for 2030 dataframe")
         print(self.demand_forcast_2030.to_string())
-        print('\n')
-        print('Optimized gravity model:')
-        print(f' - k  = {self.k}')
-        print(f' - b1 = {self.b1}')
-        print(f' - b2 = {self.b2}')
 
+        print('\nOptimized gravity model:')
+        print(f' - k  = {round(self.k,4)}')
+        print(f' - b1 = {round(self.b1,4)}')
+        print(f' - b2 = {round(self.b2,4)}')
 
 
 

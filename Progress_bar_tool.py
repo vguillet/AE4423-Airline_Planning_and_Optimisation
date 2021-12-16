@@ -13,7 +13,8 @@ class Progress_bar:
                  overwrite_setting=True,
                  bar_type: "Equal, Solid, Circle, Square" = "Equal",
                  activity_indicator_type="Pie stack",
-                 rainbow_bar=False):
+                 rainbow_bar=False,
+                 colours=True):
 
         # --> Error-proofing input:
         if type(max_step) is not int and max_step is not None:
@@ -81,16 +82,29 @@ class Progress_bar:
                                "Stack": [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'],
                                "Pie stack": ['○', '◔', '◑', '◕', '●']}
 
-        self.colours = {"reset": "\033[0m",
-                        "bold": "\033[1m",
-                        "italic": "\033[3m",
-                        "underline": "\033[4m",
-                        "green": "\033[32;1m",
-                        "red": "\033[31;1m",
-                        "magenta": "\033[35;1m",
-                        "yellow": "\033[33;1m",
-                        "cyan": "\033[36;1m",
-                        "blue": "\033[34;1m"}
+        if colours:
+            self.colours = {"reset": "\033[0m",
+                            "bold": "\033[1m",
+                            "italic": "\033[3m",
+                            "underline": "\033[4m",
+                            "green": "\033[32;1m",
+                            "red": "\033[31;1m",
+                            "magenta": "\033[35;1m",
+                            "yellow": "\033[33;1m",
+                            "cyan": "\033[36;1m",
+                            "blue": "\033[34;1m"}
+
+        else:
+            self.colours = {"reset": "",
+                            "bold": "",
+                            "italic": "",
+                            "underline": "",
+                            "green": "",
+                            "red": "",
+                            "magenta": "",
+                            "yellow": "",
+                            "cyan": "",
+                            "blue": ""}
 
         if bar_type not in self.bar_dict.keys():
             raise ValueError("Selected bar type doesn't exist,"
@@ -143,12 +157,13 @@ class Progress_bar:
     # ===============================================================================
     @property
     def __progress_bar(self):
+        # TODO: Check need for space after percent
         return self.__activity_indicator * self.print_activity_indicator \
                + self.__label \
                + self.__process_count * self.print_process_count \
                + self.__bar \
                + self.__progress_percent * self.print_progress_percent \
-               + "  " * (self.print_run_time or self.print_eta or self.print_average_run_time) \
+               + "" * (self.print_run_time or self.print_eta or self.print_average_run_time) \
                + self.__average_run_time * self.print_average_run_time \
                + self.__run_time * self.print_run_time \
                + self.__eta * self.print_eta \
@@ -287,7 +302,7 @@ class Progress_bar:
             total_run_time_str = self.__formatted_time(round(time.time() - self.initial_start_time, 4))
             run_time_str = self.__formatted_time(self.run_time) + " - " + "Total run time: " + self.colours["reset"] + total_run_time_str
 
-        if len(run_time_str) > 0:
+        if self.current != self.max_step:
             return " - " + self.colours["bold"] + "Run time: " + self.colours["reset"] + run_time_str
         else:
             return ""
@@ -305,7 +320,7 @@ class Progress_bar:
         if len(self.run_time_lst) > 0:
             eta_str = self.__formatted_time(sum(self.run_time_lst) / len(self.run_time_lst) * (self.max_step - self.current))
 
-            if len(eta_str) > 0:
+            if self.current != self.max_step:
                 return " - " + self.colours["bold"] + "ETA: " + self.colours["reset"] + eta_str
             else:
                 return ""
@@ -421,7 +436,7 @@ class Progress_bar:
 if __name__ == "__main__":
     import random
 
-    maxi_step = 1000
+    maxi_step = 100
     "Bar type options: Equal, Solid, Circle, Square"
     "Activity indicator type options: Bar spinner, Dots, Column, Pie spinner, Moon spinner, Stack, Pie stack"
     # bar = Progress_bar(max_step=maxi_step)

@@ -32,7 +32,7 @@ def haversine(coord1: tuple, coord2: tuple):
     return 0, km
 
 
-def generate_data(question=0, airports_included=15):
+def generate_data(include_two_stop_routes=True,include_electric_ac=True, airports_included=15):
     """
     Data structure:"
 
@@ -75,15 +75,6 @@ def generate_data(question=0, airports_included=15):
 
     All dataframes are indexed using the airports ICAO codes for convenience
     """
-
-    if question == 0:
-        include_electric_ac = False
-        include_two_stop_routes = False
-
-    else:
-        include_electric_ac = True
-        include_two_stop_routes = True
-
     # -> Set Network hub
     hub = "Malmö"
     hub_ref = "ESMS"
