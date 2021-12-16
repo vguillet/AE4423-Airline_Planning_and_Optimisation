@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+import plotly.graph_objects as go
 
 # Own modules
 from Problem_2.Network_2_generator import generate_data
@@ -562,4 +563,33 @@ for j in df_of_unreachables.columns:
     total += sum_demand
 
 print("Unreachable airport total demand:", total)
+
+# fig = go.Figure()
+#
+# for airport_i_ref, airport_i in airports_dict.items():
+#     for airport_j_ref, airport_j in airports_dict.items():
+#         fig.add_trace(
+#             go.Scattergeo(
+#                 locations=["Sweden"],
+#                 locationmode='country names',
+#                 lon=[airport_i['lon'], airport_j['lon']],
+#                 lat=[airport_i['lat'], airport_j['lat']],
+#                 mode='lines',
+#                 line=dict(width=1, color='red'),
+#                 opacity=float(total_capacity.loc[airport_i_ref, airport_j_ref]) / total_capacity.max().max()),
+#             )
+#
+# fig.update_layout(
+#     title_text='Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
+#     showlegend=False,
+#     geo=dict(
+#         scope='europe',
+#         projection_type='azimuthal equal area',
+#         showland=True,
+#         landcolor='rgb(243, 243, 243)',
+#         countrycolor='rgb(204, 204, 204)',
+#     ),
+# )
+#
+# fig.show()
 
