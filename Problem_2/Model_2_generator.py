@@ -453,9 +453,6 @@ print("\nModel compiled!!!")
 print("optimize")
 model.optimize()
 
-for aircraft_ref, aircraft in aircraft_dict.items():
-    print(decision_variable_dict["aircrafts"][aircraft_ref]["count"])
-
 flow_x = deepcopy(edges_df)
 flow_w = deepcopy(edges_df)
 total_capacity = deepcopy(edges_df)
@@ -480,31 +477,67 @@ for route_ref, route in routes_dict.items():
                 total_capacity.loc[airport_i_ref, airport_j_ref] += decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref].X \
                                                                          * aircraft['seats']*average_load_factor
 
-print("\n flow_x dataframe")
+print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_x dataframe")
 print(flow_x.to_string())
 
-print("\n flow_w dataframe")
+print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_w dataframe")
 print(flow_w.to_string())
 
-print("\n total_capacity dataframe")
+print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Total_capacity dataframe")
 print(total_capacity.to_string())
 
-print("\n traffic_df dataframe")
-print(traffic_df.to_string())
+print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ demand_df dataframe")
+print(demand_df.to_string())
+
+# -----------------> Print amount of aircrafts
+print("\nAircraft count:")
+for aircraft_ref, aircraft in aircraft_dict.items():
+    print(" -", aircraft_ref, ':', int(decision_variable_dict["aircrafts"][aircraft_ref]["count"].X))
 
 sum_cap = 0
-for i in total_capacity.columns:
-    for j in total_capacity.index:
+for i in total_capacity.index:
+    for j in total_capacity.columns:
         sum_cap += total_capacity.loc[i, j]
 
-sum_traf = 0
-for airport_i_ref, airport_i in airports_dict.items():
-    for airport_j_ref, airport_j in airports_dict.items():
-           sum_traf += traffic_df.loc[airport_i_ref, j]
+sum_dem = 0
+for i in demand_df.index:
+    for j in demand_df.columns:
+        sum_dem += demand_df.loc[i, j]
 
 sum_flow = 0
-for i in flow_x.columns:
-    for j in flow_x.index:
+for i in flow_x.index:
+    for j in flow_x.columns:
         sum_flow += flow_x.loc[i, j] + flow_w.loc[i, j]
 
-print("\n", sum_flow, '<', sum_cap, '<', sum_traf)
+spillage = 0
+spoilage = 0
+for i in flow_x.columns:
+    for j in flow_x.index:
+        diff = demand_df.loc[i, j] - total_capacity.loc[i, j]
+        if diff >= 0:   # Excess demand
+            spillage += diff
+
+        else:   # Excess capacity
+            spoilage += abs(diff)
+
+print('\nTotal flow:',sum_flow)
+print('Total capacity:', sum_cap)
+print('Total demand:', sum_dem)
+print("\nSpillage:", spillage)
+print("Spoilage:", spoilage)
+
+df_of_unreachables = total_capacity.loc[:, total_capacity.sum(axis=0) == 0]
+print("\nUnreachable airports:", ', '.join(list(df_of_unreachables)))
+
+
+total = 0
+for j in df_of_unreachables.columns:
+    sum_demand = 0
+    for i in df_of_unreachables.index:
+        sum_demand += demand_df.loc[i, j]
+
+    print(" - Demand", j, ":", sum_demand)
+    total += sum_demand
+
+print("Unreachable airport total demand:", total)
+
