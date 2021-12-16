@@ -31,7 +31,7 @@ utilisation_constraint = 1
 
 # =========================================================== Generate data
 display_progress_bars = True
-airports_included = 8
+airports_included = 15
 hub, hub_ref, max_continuous_operation, average_load_factor, \
 aircraft_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(question=2,airports_included=airports_included)
 
@@ -54,9 +54,9 @@ edges_df = edges_df.reindex(index=list(node for node in airports_dict.keys()), f
 decision_variable_dict = {"aircrafts": {},
                           "routes": {}}
 
-print("----------------> Creating structure")
+# print("----------------> Creating structure")
 # pb = Progress_bar_1(len(routes_dict.keys())+len(aircraft_dict.keys()))
-pb = Progress_bar(len(routes_dict.keys())+len(aircraft_dict.keys()))
+pb = Progress_bar(len(routes_dict.keys())+len(aircraft_dict.keys()),"Creating structure")
 # ----------------> Creating structure
 # ... for every aircraft
 for aircraft_ref, aircraft in aircraft_dict.items():
@@ -79,8 +79,8 @@ for route_ref, route in routes_dict.items():
     for route_ref_2, route_2 in routes_dict.items():
         decision_variable_dict["routes"][route_ref]["w"][route_ref_2] = deepcopy(edges_df)
 
-print("----------------> Filling x/w/z decision variables")
-pb = Progress_bar(len(routes_dict.keys()))
+# print("----------------> Filling x/w/z decision variables")
+pb = Progress_bar(len(routes_dict.keys()),"Filling x/w/z decision variables")
 # ----------------> Filling x/w/z decision variables
 # ... for every route
 for route_ref, route in routes_dict.items():
@@ -108,15 +108,24 @@ for route_ref, route in routes_dict.items():
                 if routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref] == 1:
 
                     # Make x_ij a decision variable
-                    decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
-                        model.addVar(vtype=GRB.INTEGER,
-                                     name="x-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
+                    if airport_i_ref not in route["path"]:
+                        pass
+                    elif airport_j_ref not in route["path"]:
+                        pass
+                    else:
+                        decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
+                            model.addVar(vtype=GRB.INTEGER,
+                                         name="x-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
                     # Make w_ij a decision variable
                     for route_ref_2, route_2 in routes_dict.items():
                         if airport_i_ref == hub_ref or airport_j_ref == hub_ref:
                             pass # no transfer if you start or end at the hub
                         elif route_ref == route_ref_2:
+                            pass
+                        elif airport_i_ref not in route["path"]:
+                            pass
+                        elif airport_j_ref not in route_2["path"]:
                             pass
                         else:
                             decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref] = \
@@ -142,19 +151,20 @@ note: each constraint sums flows across aircraft types per routes, legs are dire
 :return:
 """
 if demand_constraints:
-    print("----------------> Overall leg demand")
-    pb = Progress_bar(len(airports_dict.keys())**2)
+    # print("----------------> Overall leg demand")
+    pb = Progress_bar(len(airports_dict.keys())**2 * len(routes_dict.keys()),"Overall leg demand")
     # ----------- Overall leg demand
     # ... for every possible leg (i,j in N)
     for airport_i_ref, airport_i in airports_dict.items():
         for airport_j_ref, airport_j in airports_dict.items():
-            if display_progress_bars:
-                pb.update()
+
             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg
             constraint_l = gp.LinExpr()
 
             # ... for every route (r in R)
             for route_ref, route in routes_dict.items():
+                if display_progress_bars:
+                    pb.update()
 
                 # ... For every route 2 (n in R)
                 for route_ref_2, route_2 in routes_dict.items():
@@ -165,52 +175,52 @@ if demand_constraints:
             model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref],
                             name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
 
-    print("----------------> Direct leg demand")
-    pb = Progress_bar(len(airports_dict.keys())**2)
-    # ----------- Direct leg demand
-    # ... for every possible leg (i,j in N)
-    for airport_i_ref, airport_i in airports_dict.items():
-        for airport_j_ref, airport_j in airports_dict.items():
-            if display_progress_bars:
-                pb.update()
-            # ... for every route (r in R)
-            for route_ref, route in routes_dict.items():
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route
-                constraint_l = gp.LinExpr()
+    # print("----------------> Direct leg demand")
+    # pb = Progress_bar(len(airports_dict.keys())**2)
+    # # ----------- Direct leg demand
+    # # ... for every possible leg (i,j in N)
+    # for airport_i_ref, airport_i in airports_dict.items():
+    #     for airport_j_ref, airport_j in airports_dict.items():
+    #         if display_progress_bars:
+    #             pb.update()
+    #         # ... for every route (r in R)
+    #         for route_ref, route in routes_dict.items():
+    #             # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route
+    #             constraint_l = gp.LinExpr()
+    #
+    #             constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
+    #
+    #             model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref]
+    #                             * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
+    #                             name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
 
-                constraint_l += decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref]
-
-                model.addConstr(constraint_l <= traffic_df.loc[airport_i_ref, airport_j_ref]
-                                * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
-                                name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
-
-    print("----------------> Indirect leg demand")
-    pb = Progress_bar(len(airports_dict.keys())**2)
-    # ----------- Indirect leg demand
-    # ... for every possible leg (i,j in N)
-    for airport_i_ref, airport_i in airports_dict.items():
-        for airport_j_ref, airport_j in airports_dict.items():
-            if display_progress_bars:
-                pb.update()
-            # ... for every route (r in R)
-            for route_ref, route in routes_dict.items():
-
-                # ... for every route 2 (n in R)
-                for route_ref_2, route_2 in routes_dict.items():
-                    if route_ref == route_ref_2:
-                        pass
-                    else:
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route per route
-                        constraint_l = gp.LinExpr()
-                        constraint_r = traffic_df.loc[airport_i_ref, airport_j_ref]
-
-                        constraint_l += decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref]
-
-                        constraint_r *= routes_dict[route_ref]["path df"].loc[airport_i_ref, hub_ref]
-                        constraint_r *= routes_dict[route_ref_2]["path df"].loc[hub_ref, airport_j_ref]
-
-                        model.addConstr(constraint_l <= constraint_r,
-                                        name="Constraint-Indirect_demand-" + route_ref + "|" + route_ref_2 + "--" + airport_i_ref + "->" + airport_j_ref)
+    # print("----------------> Indirect leg demand")
+    # pb = Progress_bar(len(airports_dict.keys())**2)
+    # # ----------- Indirect leg demand
+    # # ... for every possible leg (i,j in N)
+    # for airport_i_ref, airport_i in airports_dict.items():
+    #     for airport_j_ref, airport_j in airports_dict.items():
+    #         if display_progress_bars:
+    #             pb.update()
+    #         # ... for every route (r in R)
+    #         for route_ref, route in routes_dict.items():
+    #
+    #             # ... for every route 2 (n in R)
+    #             for route_ref_2, route_2 in routes_dict.items():
+    #                 if route_ref == route_ref_2:
+    #                     pass
+    #                 else:
+    #                     # ~~~~~~~~~~~~~~~~~~~~~~~~~ 1 constraint per leg per route per route
+    #                     constraint_l = gp.LinExpr()
+    #                     constraint_r = traffic_df.loc[airport_i_ref, airport_j_ref]
+    #
+    #                     constraint_l += decision_variable_dict["routes"][route_ref]["w"][route_ref_2].loc[airport_i_ref, airport_j_ref]
+    #
+    #                     constraint_r *= routes_dict[route_ref]["path df"].loc[airport_i_ref, hub_ref]
+    #                     constraint_r *= routes_dict[route_ref_2]["path df"].loc[hub_ref, airport_j_ref]
+    #
+    #                     model.addConstr(constraint_l <= constraint_r,
+    #                                     name="Constraint-Indirect_demand-" + route_ref + "|" + route_ref_2 + "--" + airport_i_ref + "->" + airport_j_ref)
 
 # =========================================================== Flow constraint
 """
@@ -234,8 +244,8 @@ note: each constraint sums flows across aircraft types
 """
 
 if flow_constraints_1:
-    print("----------------> From hub constraint")
-    pb = Progress_bar(len(routes_dict.keys()))
+    # print("----------------> From hub constraint")
+    pb = Progress_bar(len(routes_dict.keys()),"From hub constraint")
     # ----------- From hub constraint
     # ... for every route (r in R)
     for route_ref, route in routes_dict.items():
@@ -272,8 +282,8 @@ if flow_constraints_1:
         model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(from_hub)-" + route_ref)
 
 if flow_constraints_2:
-    print("----------------> Between spokes constraint")
-    pb = Progress_bar(len(routes_dict.keys()))
+    # print("----------------> Between spokes constraint")
+    pb = Progress_bar(len(routes_dict.keys()),"Between spokes constraint")
     # ----------- Between spokes constraint
     # ... for every route greater than 2 nodes (r in R)
     for route_ref, route in routes_dict.items():
@@ -314,8 +324,8 @@ if flow_constraints_2:
             model.addConstr(constraint_l <= constraint_r, "Constraint-Flow(between_spokes)-" + route_ref)
 
 if flow_constraints_3:
-    print("----------------> To hub constraint")
-    pb = Progress_bar(len(routes_dict.keys()))
+    # print("----------------> To hub constraint")
+    pb = Progress_bar(len(routes_dict.keys()),"To hub constraint")
     # ----------- To hub constraint
     # ... for every route (r)
     for route_ref, route in routes_dict.items():
@@ -353,8 +363,8 @@ if flow_constraints_3:
 
 # =========================================================== Aircraft utilisation constraint
 if utilisation_constraint:
-    print("----------------> Aircraft utilisation constraint")
-    pb = Progress_bar(len(aircraft_dict.keys()))
+    # print("----------------> Aircraft utilisation constraint")
+    pb = Progress_bar(len(aircraft_dict.keys()),"Aircraft utilisation constraint")
     # ... for every aircraft (k in K)
     for aircraft_ref, aircraft in aircraft_dict.items():
         if display_progress_bars:
@@ -383,8 +393,8 @@ during data preprocessing in route generation). If a route is not viable, corres
 # =========================================================== Fleet budget constraint
 
 # =========================================================== Building objective function
-print("----------------> Building objective function...")
-pb = Progress_bar(len(routes_dict.keys()))
+# print("----------------> Building objective function...")
+pb = Progress_bar(len(routes_dict.keys()),"Building objective function...")
 
 
 # --> Initiating objective function linear expression
@@ -425,7 +435,7 @@ for route_ref, route in routes_dict.items():
         objective_function -= total_route_cost \
                               * decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
 
-# ... for every aircraft
+# # ... for every aircraft
 # for aircraft_ref, aircraft in aircraft_dict.items():
 #     # Lease costs
 #     objective_function -= decision_variable_dict["aircrafts"][aircraft_ref]["count"] \

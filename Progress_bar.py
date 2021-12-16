@@ -2,7 +2,7 @@ from time import time as current_time
 class Progress_bar():
     def __init__(self,max_len,name='',bar_length = 40):
         if name != '':
-            print(f'{name}...')
+            print(f'----------------> \033[34m{name}\033[0m ...')
         self.index = 0
         self.max_len = max_len
         self.status = 0
@@ -12,10 +12,11 @@ class Progress_bar():
 
         self.t_start = current_time()
         self.average_speed = 1 / 60
+        self.acc = 0
         # self.print_bar()
 
-    def update(self,index = False):
-        if not index:
+    def update(self,index = -1):
+        if index == -1:
             self.index +=1
         else:
             self.index = index
@@ -25,7 +26,9 @@ class Progress_bar():
         dt = current_time() - self.t_start
 
         if dt != 0:
+            self.acc = self.average_speed - self.status / dt
             self.average_speed = self.status / dt
+
 
         if self.not_done:
             self.print_bar()
@@ -50,10 +53,24 @@ class Progress_bar():
         while len(percentage) < 3:
             percentage=' '+percentage
 
-        print(f'\r[{bar}] {percentage}%  {self.time_to_string(time_to_go)} remaining',end = '')
+        if self.acc > 0:
+            acc = "\033[31m^\033[0m"
+        elif self.acc < 0:
+            acc = "\033[32mv\033[0m"
+        else:
+            acc = "-"
 
+        progress_time = self.time_to_string( current_time()-self.t_start + time_to_go)
+
+        end = ''
+        word = 'expected'
         if self.status == 1:
-            self.done()
+            self.not_done = False
+            end = '\n'
+            word = 'total'
+            acc = ''
+
+        print(f'\r[{bar}] {percentage}%  {self.time_to_string(time_to_go)} remaining | {word} process time: {progress_time} {acc}',end = end)
 
     def time_to_string(self,time):
         minutes = 0
@@ -72,8 +89,3 @@ class Progress_bar():
 
         return time_string
 
-    def done(self):
-        progress_time = current_time()-self.t_start
-        if self.not_done:
-            print(f' | total progress time: {self.time_to_string(progress_time)}')
-        self.not_done = False
