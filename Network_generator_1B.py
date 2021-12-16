@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from math import sqrt
+from math import sqrt, pi, sin, cos
+from numpy import arcsin
 import sys
 from copy import deepcopy
 
@@ -176,7 +177,7 @@ def generate_data():
                                 fixed_operating_cost + time_cost + fuel_cost
 
     # =========================================================== Import network traffic
-    traffic_df = pd.read_csv("Problem_1/Demand_forecast_2030.csv", header=[0])
+    traffic_df = pd.read_csv("Demand_forecast_2030.csv", header=[0])
     traffic_df = traffic_df.set_index("Unnamed: 0")
 
     return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, traffic_df, yield_df

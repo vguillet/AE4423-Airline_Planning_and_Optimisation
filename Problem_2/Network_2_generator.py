@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from math import sqrt
+from math import sqrt, pi, sin, cos
+from numpy import arcsin
 import sys
 from copy import deepcopy
+
 
 USD2EUR = 1  # EUR/USD in 2020
 e_eur = 0.07 * USD2EUR  # EUR/kWh
@@ -387,7 +389,7 @@ def generate_data(question=0, airports_included=15):
             #         aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
 
     # =========================================================== Import network traffic
-    traffic_df = pd.read_csv("Problem_1/Demand_forecast_2030.csv", header=[0])
+    traffic_df = pd.read_csv("Demand_forecast_2030.csv", header=[0])
     traffic_df = traffic_df.set_index("Unnamed: 0")
 
     # TODO: Fix

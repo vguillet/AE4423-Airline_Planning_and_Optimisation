@@ -118,7 +118,10 @@ class Demand_forcast():
         print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ demand_forecast for 2030 dataframe")
         print(self.demand_forcast_2030.to_string())
         print('\n')
-        print('Gr')
+        print('Optimized gravity model:')
+        print(f' - k  = {self.k}')
+        print(f' - b1 = {self.b1}')
+        print(f' - b2 = {self.b2}')
 
 
 
