@@ -32,55 +32,13 @@ def haversine(coord1: tuple, coord2: tuple):
     return 0, km
 
 
-def generate_data(include_two_stop_routes=True,include_electric_ac=True, airports_included=15):
-    """
-    Data structure:"
-
-    - airports_dict contains all the airports with their respective properties
-        airports_dict = [airport_ref]: {"lat",
-                                             "lon",
-                                             "runway",
-                                             "runway compatibility": {[ac]: binary}
-                                             }
-
-        Note: "runway compatibility lst" is a list of lists, with item 0 : aircraft ref
-                                                                  item 1 : compatible (binary)
-
-    - ac_dict contains all the aircraft types and their respective properties.
-    It is a double nested dictionary with aircraft type are the keys to l1, and properties as l2 keys.
-
-        ac_dict = {[aircraft_type]: {"speed": int,
-                                          "seats": int,
-                                          "avg TAT": int,
-                                          "extra charging time": int,
-                                          "max range": int,
-                                          "runway req": int,
-
-                                          "weekly lease cost": int,
-                                          "fixed operating cost": int,
-                                          "time cost parameter": int,
-                                          "fuel cost parameter": int,
-                                          "batteries energy": int,
-
-                                          "legs": {"viability": df of binaries,
-                                                   "duration": df of floats,
-                                                   "total operating cost": df of floats,
-                                                   "yield per RPK": df of floats}
-
-                                          "routes viability": {[route_ref]: binary}
-                                          }
-
-    - distances_df is a dataframe containing the distance flown between airports
-    - traffic is a dataframe containing the amount of traffic for each route
-
-    All dataframes are indexed using the airports ICAO codes for convenience
-    """
+def generate_data(include_two_stop_routes=True, include_electric_ac=True, airports_included=15):
     # -> Set Network hub
     hub = "Malmö"
     hub_ref = "ESMS"
 
     # -> Set fleet properties
-    max_continuous_operation = 10
+    max_continuous_operation = 10 * 7
     average_load_factor = 0.8
 
     # =========================================================== Create aircraft dict

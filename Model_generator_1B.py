@@ -187,7 +187,8 @@ if AC_productivity:
 
 # -----------------> constraint C5 (range)
 """
-This constraint was left out as it was indirectly implemented using the conditional statement on line 81
+This constraint was left out as it was indirectly implemented using the conditional statement on line 81 
+in the decision variables generation
 """
 
 # -----------------> constraint C6 (budget)
