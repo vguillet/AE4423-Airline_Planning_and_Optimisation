@@ -282,7 +282,7 @@ flow_w.to_csv("flow_w_1b.csv")
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  z dataframes")
 for aircraft_ref, aircraft in aircraft_dict.items():
     print(aircraft_ref)
-    print([aircraft_ref].to_string())
+    print(zs[aircraft_ref].to_string())
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Total_capacity dataframe")
 print(total_capacity.to_string())
