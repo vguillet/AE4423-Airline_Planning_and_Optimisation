@@ -113,7 +113,7 @@ def generate_data(include_two_stop_routes=True, include_electric_ac=True, airpor
         ac_dict = fuel_ac
 
         # =========================================================== Import airport
-    airport_df = pd.read_csv("Problem_2/Destination_coordinates.csv")
+    airport_df = pd.read_csv("Destination_coordinates.csv")
 
     # -> Reshape data
     airport_df = airport_df.transpose()
