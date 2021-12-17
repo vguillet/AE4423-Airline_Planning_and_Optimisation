@@ -273,20 +273,24 @@ for airport_i_ref, airport_i in airports_dict.items():
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_x dataframe")
 print(flow_x.to_string())
+flow_x.to_csv("flow_x_1b.csv")
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_w dataframe")
 print(flow_w.to_string())
+flow_w.to_csv("flow_w_1b.csv")
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  z dataframes")
 for aircraft_ref, aircraft in aircraft_dict.items():
     print(aircraft_ref)
-    print(zs[aircraft_ref].to_string())
+    print([aircraft_ref].to_string())
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Total_capacity dataframe")
 print(total_capacity.to_string())
+total_capacity.to_csv("total_capacity_1b.csv")
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ demand_df dataframe")
 print(demand_df.to_string())
+demand_df.to_csv("demand_df_1b.csv")
 
 # -----------------> Print amount of aircrafts
 print("\nAircraft count:")

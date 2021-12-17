@@ -80,7 +80,7 @@ def generate_data():
                         }
 
     # =========================================================== Import airport
-    airport_df = pd.read_csv("Problem_2/Destination_coordinates.csv")
+    airport_df = pd.read_csv("Destination_coordinates.csv")
 
     # -> Reshape data
     airport_df = airport_df.transpose()
