@@ -33,7 +33,7 @@ utilisation_constraint = True
 # ======================================================================================================
 
 display_progress_bars = True
-airports_included = 13
+airports_included = 15
 hub, hub_ref, max_continuous_operation, average_load_factor, \
 aircraft_dict, airports_dict, distances_df, routes_dict, demand_df, yield_df = \
     generate_data(include_two_stop_routes=True, include_electric_ac=True, airports_included=airports_included)
@@ -119,7 +119,7 @@ for route_ref, route in routes_dict.items():
 
                     else:
                         if route["path"].index(airport_i_ref) > route["path"].index(airport_j_ref) and airport_j_ref != hub_ref:
-                            pass
+                            pass    # ensure aircrafts fly forward
 
                         else:
                             # Make x_ij a decision variable
@@ -171,8 +171,9 @@ if demand_constraints:
             model.addConstr(constraint_l <= demand_df.loc[airport_i_ref, airport_j_ref],
                             name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
 
+    # TODO: Double check line ref
     """
-    This constraint was left out as it was indirectly implemented using the conditional statement on line 97 
+    This constraint was left out as it was indirectly implemented using the conditional statement on line 112->124 
     in the decision variables generation
     """
 
@@ -193,6 +194,12 @@ if demand_constraints:
     #             model.addConstr(constraint_l <= demand_df.loc[airport_i_ref, airport_j_ref]
     #                             * routes_dict[route_ref]["path df"].loc[airport_i_ref, airport_j_ref],
     #                             name="Constraint-Direct_demand-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
+
+    # TODO: Double check line ref
+    """
+    This constraint was left out as it was indirectly implemented using the conditional statement on line 131->141 
+    in the decision variables generation
+    """
 
     # pb = Progress_bar(len(airports_dict.keys())**2)
     # # ----------- Indirect leg demand
@@ -400,12 +407,14 @@ if utilisation_constraint:
         model.addConstr(constraint_l <= constraint_r, "Constraint-Utilisation-" + aircraft_ref)
 
 # ----------------> Aircraft allocation constraints
+# TODO: Double check line ref
 """
 This constraint was left out as it was indirectly implemented using the conditional statement on line 97 
 in the decision variables generation
 """
 
 # ----------------> Fleet budget constraint
+# TODO: Double check line ref
 """
 This constraint was left out as the budget is not constrained in this assignment
 """
@@ -581,22 +590,15 @@ for airport_ref, airport in airports_dict.items():
 
 fig = go.Figure()
 
-fig.add_trace(go.Scattergeo(
-    # locations=["Sweden"],
-    # locationmode='country names',
-    lon = lats,
-    lat = lons,
-    hoverinfo = 'text',
-    text = names,
-    mode = 'markers',
-    marker = dict(
-        size = 100,
-        color = 'rgb(255, 0, 0)',
-        line = dict(
-            width = 3,
-            color = 'rgba(68, 68, 68, 0)'
+for airport_i_ref, airport_i in airports_dict.items():
+    fig.add_trace(
+        go.Scattergeo(
+            lon=[airport_i['lon']],
+            lat=[airport_i['lat']],
+            mode='markers',
+            marker=dict(size=log(airport_i["population"]), color="black"),
+            opacity=0.3),
         )
-    )))
 
 colors='''
     aqua, aquamarine,
@@ -634,6 +636,7 @@ colors='''
     violet, wheat, yellow,
     yellowgreen
     '''
+
 colors=colors.split(',')
 colors=[c.replace('\n','') for c in colors]
 colors=[c.replace(' ','') for c in colors]
@@ -653,24 +656,24 @@ for route_ref, route in routes_dict.items():
                         go.Scattergeo(
                             # locations=["Sweden"],
                             # locationmode='country names',
-                            lon = [airports_dict[airport_i_ref]['lon'], airports_dict[airport_j_ref]['lon']],
-                            lat = [airports_dict[airport_i_ref]['lat'], airports_dict[airport_j_ref]['lat']],
-                            mode = 'lines',
-                            line = dict(width = 1.3,color = colors[c]),
-                            opacity = 1,
+                            lon=[airports_dict[airport_i_ref]['lon'], airports_dict[airport_j_ref]['lon']],
+                            lat=[airports_dict[airport_i_ref]['lat'], airports_dict[airport_j_ref]['lat']],
+                            mode='lines',
+                            line=dict(width=1.3, color=colors[c]),
+                            opacity=1,
+                            showlegend=True
                         )
                     )
                 c += 1
 
 fig.update_layout(
-    title_text = 'Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
-    showlegend = False,
-    geo = dict(
-        scope = 'europe',
-        projection_type = 'azimuthal equal area',
-        showland = True,
-        landcolor = 'rgb(243, 243, 243)',
-        countrycolor = 'rgb(204, 204, 204)',
+    title_text='(Hover for airport names)',
+    geo=dict(
+        scope='europe',
+        projection_type='azimuthal equal area',
+        showland=True,
+        landcolor='rgb(243, 243, 243)',
+        countrycolor='rgb(204, 204, 204)',
     ),
 )
 

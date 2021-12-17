@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 from copy import deepcopy
+from math import log
 
 # Libs
 import pandas as pd
@@ -355,23 +356,15 @@ for airport_ref, airport in airports_dict.items():
 
 fig = go.Figure()
 
-fig.add_trace(go.Scattergeo(
-    # locations=["Sweden"],
-    # locationmode='country names',
-    lon = lats,
-    lat = lons,
-    hoverinfo = 'text',
-    text = names,
-    mode = 'markers',
-    marker = dict(
-        size = 5,
-        color = 'rgb(255, 0, 0)',
-        line = dict(
-            width = 3,
-            color = 'rgba(68, 68, 68, 0)'
+for airport_i_ref, airport_i in airports_dict.items():
+    fig.add_trace(
+        go.Scattergeo(
+            lon=[airport_i['lon']],
+            lat=[airport_i['lat']],
+            mode='markers',
+            marker=dict(size=log(airport_i["population"]), color="black"),
+            opacity=0.3),
         )
-    )))
-
 
 flight_paths = []
 for aircraft_ref, aircraft in aircraft_dict.items():
@@ -384,23 +377,22 @@ for aircraft_ref, aircraft in aircraft_dict.items():
                         go.Scattergeo(
                             # locations=["Sweden"],
                             # locationmode='country names',
-                            lon = [airport_i['lon'], airport_j['lon']],
-                            lat = [airport_i['lat'], airport_j['lat']],
-                            mode = 'lines',
-                            line = dict(width = 1.3,color = aircraft['color']),
-                            opacity = z.X/11,
+                            lon=[airport_i['lon'], airport_j['lon']],
+                            lat=[airport_i['lat'], airport_j['lat']],
+                            mode='lines',
+                            line=dict(width=1.3, color=aircraft['color']),
+                            opacity=z.X/11
                         )
                     )
 
 fig.update_layout(
-    title_text = 'Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
-    showlegend = False,
-    geo = dict(
-        scope = 'europe',
-        projection_type = 'azimuthal equal area',
-        showland = True,
-        landcolor = 'rgb(243, 243, 243)',
-        countrycolor = 'rgb(204, 204, 204)',
+    title_text='(Hover for airport names)',
+    geo=dict(
+        scope='europe',
+        projection_type='azimuthal equal area',
+        showland=True,
+        landcolor='rgb(243, 243, 243)',
+        countrycolor='rgb(204, 204, 204)',
     ),
 )
 
