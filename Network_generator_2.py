@@ -5,6 +5,7 @@ from math import sqrt, pi, sin, cos
 from numpy import arcsin
 import sys
 from copy import deepcopy
+from Demand_forecast_1A import Demand_forcast
 
 USD2EUR = 1  # EUR/USD in 2020
 e_eur = 0.07 * USD2EUR  # EUR/kWh
@@ -146,10 +147,9 @@ def generate_data(include_two_stop_routes=True, include_electric_ac=True, airpor
                                            "population": row["Population"],
                                            "runway compatibility": runway_compatibility}
 
-        # ======================================================================================================
     # ======================================================================================================
     # ======================================================================================================
-    # TODO: Remove once debugged
+    # ======================================================================================================
 
     new_airport_dict = {}
 
@@ -319,42 +319,14 @@ def generate_data(include_two_stop_routes=True, include_electric_ac=True, airpor
                         # -> Set route viability
             aircraft["routes viability"][route_ref] = viable
 
-            # for i in range(len(route["path"])-1):
-            #     # -> Solve for route duration
-            #     aircraft["routes"][route_ref]["duration"] += \
-            #         aircraft["legs"]["duration"].loc[route["path"][i], route["path"][i+1]]
-            #
-            #     # -> Solve for route total cost
-            #     # > If current i is hub and not start
-            #     # if i != 0 and len(route_path) > 3 and route["path"][i] == hub_ref:
-            #
-            #     aircraft["routes"][route_ref]["total operating cost"] += \
-            #         aircraft["legs"]["total operating cost"].loc[route["path"][i], route["path"][i+1]]
-            #
-            #     # Solve for route yield per passenger
-            #     aircraft["routes"][route_ref]["yield per RPK"] += \
-            #         aircraft["legs"]["yield per RPK"].loc[route["path"][i], route["path"][i+1]]
-
     # =========================================================== Import network traffic
-    traffic_df = pd.read_csv("Demand_forecast_2030.csv", header=[0])
-    traffic_df = traffic_df.set_index("Unnamed: 0")
-
-    # TODO: Fix
+    traffic_df = Demand_forcast().demand_forcast_2030
 
     return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df
 
 
 if __name__ == "__main__":
-    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data(
-        question=1)
-
-    # print(ac_dict)
-    # print(airports_dict)
-    # print(distances_df)
-    # print(routes_dict)
-    # print(traffic_df)
-
-    print("\n")
+    hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, routes_dict, traffic_df, yield_df = generate_data()
 
     print("Network nodes count:", len(airports_dict))
     print("Aircraft type count:", len(ac_dict))

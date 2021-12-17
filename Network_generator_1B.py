@@ -5,6 +5,7 @@ from math import sqrt, pi, sin, cos
 from numpy import arcsin
 import sys
 from copy import deepcopy
+from Demand_forecast_1A import Demand_forcast
 
 USD2EUR = 1           # EUR/USD in 2020
 e_eur = 0.07 * USD2EUR  # EUR/kWh
@@ -179,8 +180,7 @@ def generate_data():
                                 fixed_operating_cost + time_cost + fuel_cost
 
     # =========================================================== Import network traffic
-    traffic_df = pd.read_csv("Demand_forecast_2030.csv", header=[0])
-    traffic_df = traffic_df.set_index("Unnamed: 0")
+    traffic_df = Demand_forcast().demand_forcast_2030
 
     return hub, hub_ref, max_continuous_operation, average_load_factor, ac_dict, airports_dict, distances_df, traffic_df, yield_df
 
