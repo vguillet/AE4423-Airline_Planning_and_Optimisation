@@ -87,13 +87,11 @@ def generate_data():
     airport_df.columns = airport_df.iloc[0]
     airport_df = airport_df.iloc[1:].reset_index(drop=True)
 
-    # -> Remove unnecessary data
-    airport_df = airport_df.drop("Population", 1)
-
     # -> Adjust type
     airport_df["Latitude (deg)"] = pd.to_numeric(airport_df["Latitude (deg)"])
     airport_df["Longitude (deg)"] = pd.to_numeric(airport_df["Longitude (deg)"])
     airport_df["Runway (m)"] = pd.to_numeric(airport_df["Runway (m)"])
+    airport_df["Population"] = pd.to_numeric(airport_df["Population"])
 
     # -> Create a node per destination
     airports_dict = {}
@@ -112,8 +110,9 @@ def generate_data():
         airports_dict[row["ICAO Code"]] = {"lat": row["Latitude (deg)"],
                                            "lon": row["Longitude (deg)"],
                                            "runway": row["Runway (m)"],
+                                           "population": row["Population"],
                                            "runway compatibility": runway_compatibility}
-    
+
     # =========================================================== Prepare network edge dataframe
     # -> Create empty network edge dataframe
     edges_df = pd.DataFrame(0,
