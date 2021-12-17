@@ -114,7 +114,6 @@ for route_ref, route in routes_dict.items():
                     pass    # no decision variables x and w if departure airport not on route
 
                 else:
-                    # Make x_ij a decision variable
                     if airport_j_ref not in route["path"]:
                         pass    # no decision variable x if destination not on route
 
@@ -123,6 +122,7 @@ for route_ref, route in routes_dict.items():
                             pass
 
                         else:
+                            # Make x_ij a decision variable
                             decision_variable_dict["routes"][route_ref]["x"].loc[airport_i_ref, airport_j_ref] = \
                                 model.addVar(vtype=GRB.INTEGER,
                                              name="x-" + route_ref + "--" + airport_i_ref + "->" + airport_j_ref)
@@ -170,6 +170,11 @@ if demand_constraints:
 
             model.addConstr(constraint_l <= demand_df.loc[airport_i_ref, airport_j_ref],
                             name="Constraint-Total_demand-" + airport_i_ref + "->" + airport_j_ref)
+
+    """
+    This constraint was left out as it was indirectly implemented using the conditional statement on line 97 
+    in the decision variables generation
+    """
 
     # pb = Progress_bar(len(airports_dict.keys())**2)
     # # ----------- Direct leg demand
