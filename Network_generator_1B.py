@@ -49,7 +49,7 @@ def generate_data():
                         "time cost parameter": 750,
                         "fuel cost parameter": 1,
 
-                        "color": "red"},
+                        "color": "#4040FF"},
 
                "AC_2": {"speed": 820,
                         "seats": 70,
@@ -62,7 +62,7 @@ def generate_data():
                         "time cost parameter": 775,
                         "fuel cost parameter": 2,
 
-                        "color" : "blue"},
+                        "color" : "#FF3030"},
 
                "AC_3": {"speed": 850,
                         "seats": 150,
