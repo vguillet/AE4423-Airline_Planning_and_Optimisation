@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+import plotly.graph_objects as go
 
 # Own modules
 from Network_generator_1B import generate_data
@@ -246,7 +247,11 @@ print("\n\n=====================================================================
 # -----------------> Make dataframes with the results as numbers
 flow_x = deepcopy(edges_df)
 flow_w = deepcopy(edges_df)
+zs = {}
+for aircraft_ref, aircraft in aircraft_dict.items():
+    zs[aircraft_ref] = deepcopy(edges_df)
 total_capacity = deepcopy(edges_df)
+
 for airport_i_ref, airport_i in airports_dict.items():
     for airport_j_ref, airport_j in airports_dict.items():
 
@@ -260,6 +265,8 @@ for airport_i_ref, airport_i in airports_dict.items():
 
         for aircraft_ref, aircraft in aircraft_dict.items():
             if type(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]) != int:
+                zs[aircraft_ref].loc[airport_i_ref,airport_j_ref] = decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref].X
+
                 total_capacity.loc[airport_i_ref, airport_j_ref] += \
                     int( round(decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref].X \
                     * aircraft['seats']*average_load_factor) ) # could be non int due the 80% LF, so its rounded
@@ -269,6 +276,11 @@ print(flow_x.to_string())
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  Flow_w dataframe")
 print(flow_w.to_string())
+
+print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  z dataframes")
+for aircraft_ref, aircraft in aircraft_dict.items():
+    print(aircraft_ref)
+    print(zs[aircraft_ref].to_string())
 
 print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Total_capacity dataframe")
 print(total_capacity.to_string())
@@ -327,3 +339,65 @@ for j in df_of_unreachables.columns:
     total += sum_demand
 
 print("Unreachable airport total demand:", total)
+
+
+lats = []
+lons = []
+names =[]
+for airport_ref, airport in airports_dict.items():
+    lats.append(airport['lat'])
+    lons.append(airport['lon'])
+    names.append(airport_ref)
+
+fig = go.Figure()
+
+fig.add_trace(go.Scattergeo(
+    # locations=["Sweden"],
+    # locationmode='country names',
+    lon = lats,
+    lat = lons,
+    hoverinfo = 'text',
+    text = names,
+    mode = 'markers',
+    marker = dict(
+        size = 5,
+        color = 'rgb(255, 0, 0)',
+        line = dict(
+            width = 3,
+            color = 'rgba(68, 68, 68, 0)'
+        )
+    )))
+
+
+flight_paths = []
+for aircraft_ref, aircraft in aircraft_dict.items():
+    for airport_i_ref, airport_i in airports_dict.items():
+        for airport_j_ref, airport_j in airports_dict.items():
+            z = decision_variable_dict["aircrafts"][aircraft_ref]["z"].loc[airport_i_ref, airport_j_ref]
+            if type(z) != int:
+                if z.X != 0:
+                    fig.add_trace(
+                        go.Scattergeo(
+                            # locations=["Sweden"],
+                            # locationmode='country names',
+                            lon = [airport_i['lon'], airport_j['lon']],
+                            lat = [airport_i['lat'], airport_j['lat']],
+                            mode = 'lines',
+                            line = dict(width = 1.3,color = aircraft['color']),
+                            opacity = z.X/11,
+                        )
+                    )
+
+fig.update_layout(
+    title_text = 'Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
+    showlegend = False,
+    geo = dict(
+        scope = 'europe',
+        projection_type = 'azimuthal equal area',
+        showland = True,
+        landcolor = 'rgb(243, 243, 243)',
+        countrycolor = 'rgb(204, 204, 204)',
+    ),
+)
+
+fig.show()

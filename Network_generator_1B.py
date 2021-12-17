@@ -47,7 +47,9 @@ def generate_data():
                         "weekly lease cost": 15000,
                         "fixed operating cost": 300,
                         "time cost parameter": 750,
-                        "fuel cost parameter": 1},
+                        "fuel cost parameter": 1,
+
+                        "color": "red"},
 
                "AC_2": {"speed": 820,
                         "seats": 70,
@@ -58,7 +60,9 @@ def generate_data():
                         "weekly lease cost": 34000,
                         "fixed operating cost": 600,
                         "time cost parameter": 775,
-                        "fuel cost parameter": 2},
+                        "fuel cost parameter": 2,
+
+                        "color" : "blue"},
 
                "AC_3": {"speed": 850,
                         "seats": 150,
@@ -69,8 +73,11 @@ def generate_data():
                         "weekly lease cost": 80000,
                         "fixed operating cost": 1250,
                         "time cost parameter": 1400,
-                        "fuel cost parameter": 3.75
-                        }}
+                        "fuel cost parameter": 3.75,
+
+
+                        "color" : "green"},
+                        }
 
     # =========================================================== Import airport
     airport_df = pd.read_csv("Problem_2/Destination_coordinates.csv")

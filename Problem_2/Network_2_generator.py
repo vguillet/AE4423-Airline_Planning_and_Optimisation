@@ -233,7 +233,7 @@ def generate_data(include_two_stop_routes=True, include_electric_ac=True, airpor
 
                     else:
                         aircraft["legs"]["total operating cost"].loc[airport_i_ref, airport_j_ref] = \
-                            (fixed_operating_cost + time_cost + fuel_cost) + energy_cost
+                            (fixed_operating_cost + time_cost + fuel_cost*0.7) + energy_cost
 
     # =========================================================== Determine route properties
     # -> Create network edge dataframe

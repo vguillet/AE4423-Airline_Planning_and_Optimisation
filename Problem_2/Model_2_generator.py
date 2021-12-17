@@ -35,7 +35,7 @@ utilisation_constraint = True
 # ======================================================================================================
 
 display_progress_bars = True
-airports_included = 8
+airports_included = 13
 hub, hub_ref, max_continuous_operation, average_load_factor, \
 aircraft_dict, airports_dict, distances_df, routes_dict, demand_df, yield_df = \
     generate_data(include_two_stop_routes=True, include_electric_ac=True, airports_included=airports_included)
@@ -46,7 +46,7 @@ model = gp.Model("APO_assignment_model")
 # -> Disabling the gurobi console output, set to 1 to enable
 model.Params.OutputFlag = 1
 
-model.setParam("TimeLimit", 100)
+model.setParam("TimeLimit", 60)
 
 # =========================================================== Prepare network edge dataframe
 # -> Create network edge dataframe
@@ -564,32 +564,107 @@ for j in df_of_unreachables.columns:
 
 print("Unreachable airport total demand:", total)
 
-# fig = go.Figure()
-#
-# for airport_i_ref, airport_i in airports_dict.items():
-#     for airport_j_ref, airport_j in airports_dict.items():
-#         fig.add_trace(
-#             go.Scattergeo(
-#                 locations=["Sweden"],
-#                 locationmode='country names',
-#                 lon=[airport_i['lon'], airport_j['lon']],
-#                 lat=[airport_i['lat'], airport_j['lat']],
-#                 mode='lines',
-#                 line=dict(width=1, color='red'),
-#                 opacity=float(total_capacity.loc[airport_i_ref, airport_j_ref]) / total_capacity.max().max()),
-#             )
-#
-# fig.update_layout(
-#     title_text='Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
-#     showlegend=False,
-#     geo=dict(
-#         scope='europe',
-#         projection_type='azimuthal equal area',
-#         showland=True,
-#         landcolor='rgb(243, 243, 243)',
-#         countrycolor='rgb(204, 204, 204)',
-#     ),
-# )
-#
-# fig.show()
+lats = []
+lons = []
+names =[]
+for airport_ref, airport in airports_dict.items():
+    lats.append(airport['lat'])
+    lons.append(airport['lon'])
+    names.append(airport_ref)
 
+fig = go.Figure()
+
+fig.add_trace(go.Scattergeo(
+    # locations=["Sweden"],
+    # locationmode='country names',
+    lon = lats,
+    lat = lons,
+    hoverinfo = 'text',
+    text = names,
+    mode = 'markers',
+    marker = dict(
+        size = 100,
+        color = 'rgb(255, 0, 0)',
+        line = dict(
+            width = 3,
+            color = 'rgba(68, 68, 68, 0)'
+        )
+    )))
+
+colors='''
+    aqua, aquamarine,
+    blue,
+    blueviolet, brown, cadetblue,
+    chartreuse, chocolate, coral, cornflowerblue,
+    crimson, cyan, darkblue, darkcyan,
+    darkgoldenrod, darkgreen,
+    darkkhaki, darkmagenta, darkolivegreen, darkorange,
+    darkorchid, darkred, darksalmon, darkseagreen,
+    darkslateblue, darkslategray,
+    darkturquoise, darkviolet, deeppink, deepskyblue,
+    dodgerblue, firebrick,
+    floralwhite, forestgreen, fuchsia, gainsboro,
+    gold, goldenrod, gray, green,
+    greenyellow, honeydew, hotpink, indianred, indigo,
+    khaki, lavender, lawngreen,
+    lightblue, lightcoral,
+    lightgoldenrodyellow,
+    lightgreen, lightpink, lightsalmon, lightseagreen,
+    lightskyblue,
+    lightsteelblue, lime, limegreen,
+    magenta, maroon, mediumaquamarine,
+    mediumblue, mediumorchid, mediumpurple,
+    mediumseagreen, mediumslateblue, mediumspringgreen,
+    mediumturquoise, mediumvioletred,
+    olive, olivedrab, orange, orangered,
+    orchid, palegoldenrod, palegreen, paleturquoise,
+    palevioletred, papayawhip, peachpuff, peru, pink,
+    plum, powderblue, purple, red, rosybrown,
+    royalblue, saddlebrown, salmon, sandybrown,
+    seagreen, seashell, sienna, skyblue,
+    slateblue, springgreen,
+    steelblue, teal, thistle, tomato, turquoise,
+    violet, wheat, yellow,
+    yellowgreen
+    '''
+colors=colors.split(',')
+colors=[c.replace('\n','') for c in colors]
+colors=[c.replace(' ','') for c in colors]
+
+flight_paths = []
+c = 0
+for route_ref, route in routes_dict.items():
+    for aircraft_ref, aircraft in aircraft_dict.items():
+        z = decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]
+        if type(z) != int:
+            if z.X != 0:
+                for i in range(len(route["path"])-1):
+                    airport_i_ref = route["path"][i]
+                    airport_j_ref = route["path"][i+1]
+
+                    fig.add_trace(
+                        go.Scattergeo(
+                            # locations=["Sweden"],
+                            # locationmode='country names',
+                            lon = [airports_dict[airport_i_ref]['lon'], airports_dict[airport_j_ref]['lon']],
+                            lat = [airports_dict[airport_i_ref]['lat'], airports_dict[airport_j_ref]['lat']],
+                            mode = 'lines',
+                            line = dict(width = 1.3,color = colors[c]),
+                            opacity = 1,
+                        )
+                    )
+                c += 1
+
+fig.update_layout(
+    title_text = 'Feb. 2011 American Airline flight paths<br>(Hover for airport names)',
+    showlegend = False,
+    geo = dict(
+        scope = 'europe',
+        projection_type = 'azimuthal equal area',
+        showland = True,
+        landcolor = 'rgb(243, 243, 243)',
+        countrycolor = 'rgb(204, 204, 204)',
+    ),
+)
+
+fig.show()
