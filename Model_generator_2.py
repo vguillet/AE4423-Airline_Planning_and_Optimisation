@@ -6,6 +6,7 @@
 
 # Built-in/Generic Imports
 from copy import deepcopy
+from math import log
 
 # Libs
 import pandas as pd
@@ -502,7 +503,7 @@ for route_ref, route in routes_dict.items():
 
     for aircraft_ref, aircraft in aircraft_dict.items():
         if type(decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref]) != int and decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref].X > 0:
-                print('!!!', route_ref)
+                print('!!!', decision_variable_dict["aircrafts"][aircraft_ref]["z"][route_ref].X, "-", route_ref)
 
         for i in range(len(route["path"])-1):
             airport_i_ref = route["path"][i]
@@ -597,7 +598,7 @@ for airport_i_ref, airport_i in airports_dict.items():
             lat=[airport_i['lat']],
             mode='markers',
             marker=dict(size=log(airport_i["population"]), color="black"),
-            opacity=0.3),
+            opacity=0.3)
         )
 
 colors='''
