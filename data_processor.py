@@ -10,8 +10,6 @@ from numpy import pi, sin, cos, arcsin, sqrt
 
 
 class Data_reader:
-    # TODO: fix puralthings
-
     """These are the DataFrames created from the given Excel files"""
     airport_input_df: pd.DataFrame
     # fleet_initial_final_position_input_df : pd.DataFrame
@@ -33,6 +31,7 @@ class Data_reader:
         self.create_OD_df()
         self.create_request_dict()
         self.create_distance_df()
+        self.create_aircraft_dict()
 
     def make_input_data_frames(self):
         """
@@ -144,7 +143,22 @@ class Data_reader:
                 self.distance_df.loc[airport_i_ref,airport_j_ref] = 2 * R_E * arcsin(sqrt(term_1+term_2)) # TODO: check unit conversion
 
     def create_aircraft_dict(self):
-        self.aircraft_dict = {} # TODO TODO
+        self.aircraft_dict = {
+            "AC_1" : {
+                "speed"             : 800, # km/h TODO: check unit conversion
+                "payload"           : 50, # ton TODO: check unit conversion
+                "TAT"               : 2, # h TODO: check unit conversion
+                "LTO"               : 0.5, # h TODO: check unit conversion
+                "operational_cost"  : 8 # MU/km TODO: check unit conversion
+            },
+            "AC_2" : {
+                "speed"             : 800, # km/h TODO: check unit conversion
+                "payload"           : 40, # ton TODO: check unit conversion
+                "TAT"               : 2, # h TODO: check unit conversion
+                "LTO"               : 0.5, # h TODO: check unit conversion
+                "operational_cost"  : 6 # MU/km TODO: check unit conversion
+            }
+        }
 
     def export(self):
         """
@@ -167,4 +181,4 @@ if __name__ == '__main__':
     #
     # print(distance_df)
     # print(OD_list)
-    print(vars(D).keys())
+    print(vars(D)["aircraft_dict"])
