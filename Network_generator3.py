@@ -6,6 +6,7 @@ Created on 24 dec. 2021
 
 from data_processor import Data_reader
 
+
 class Network_generator:
     """    Sets:
     N: set of nodes n (a,t)
