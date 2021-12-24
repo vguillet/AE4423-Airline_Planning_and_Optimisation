@@ -6,6 +6,7 @@ Created on 24 dec. 2021
 
 
 import pandas as pd
+from numpy import pi, sin, cos, arcsin, sqrt
 
 
 class Data_reader:
@@ -20,14 +21,17 @@ class Data_reader:
     OD_df: pd.DataFrame
     OD_list: list
     requests_dict: dict
+    distance_df : pd.DataFrame
 
     def __init__(self):
-        self.make_data_frames()
+        self.make_input_data_frames()
+
         self.create_airport_dict()
         self.create_OD_df()
         self.create_request_dict()
+        self.create_distance_df()
 
-    def make_data_frames(self):
+    def make_input_data_frames(self):
         """
         The given excel files will be put into Dataframes.
         """
@@ -115,13 +119,34 @@ class Data_reader:
                 "penalty":      self.requests_input_df.loc[i,"Penalty [MU/ton]"], # TODO: check unit conversion!
             }
 
+    def create_distance_df(self):
+        deg2rad = pi/180
+        R_E = 6371 # km
+
+        airports = self.airports_dict.keys()
+        self.distance_df = pd.DataFrame(index=airports,columns=airports,data=0)
+
+        for airport_i_ref, airport_i in self.airports_dict.items():
+            for airport_j_ref, airport_j in self.airports_dict.items():
+
+                ##just for conviniece
+                lat_i = deg2rad * airport_i["lat"]
+                lat_j = deg2rad * airport_j["lat"]
+                lon_i = deg2rad * airport_i["lon"]
+                lon_j = deg2rad * airport_j["lon"]
+
+                term_1 = (sin( (lat_i-lat_j)/2 ))**2
+                term_2 = cos(lat_i)*cos(lat_j)*(sin( (lon_i-lon_j)/2 ))**2
+
+                self.distance_df.loc[airport_i_ref,airport_j_ref] = 2 * R_E * arcsin(sqrt(term_1+term_2)) # TODO: check unit conversion
+
     def export(self):
         """
         Call this function to export the usefull dictionaries, lists and DataFrames for network generation
-        :return: airports_dict, OD_df, OD_list, requests_dict
+        :return: airports_dict, OD_df, OD_list, requests_dict, distance_df
         """
 
-        return self.airports_dict, self.OD_df, self.OD_list, self.requests_dict
+        return self.airports_dict, self.OD_df, self.OD_list, self.requests_dict, self.distance_df
 
 if __name__ == '__main__':
     D = Data_reader()
@@ -130,6 +155,8 @@ if __name__ == '__main__':
         print(airport_ref,":",airport)
     # print(D.OD_list)
     # print(D.requests_dict)
-    airports_dict, OD_df, OD_list, requests_dict = D.export()
+    airports_dict, OD_df, OD_list, requests_dict, distance_df = D.export()
     for request_ID, request in requests_dict.items():
         print(request_ID,":",request)
+
+    print(distance_df)
