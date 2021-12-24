@@ -6,8 +6,8 @@ Created on 24 dec. 2021
 
 
 import pandas as pd
-from numpy import pi, sin, cos, arcsin, sqrt
-
+from numpy import pi, sin, cos, arcsin, sqrt, ceil, floor
+from copy import deepcopy
 
 class Data_reader:
     """These are the DataFrames created from the given Excel files"""
@@ -23,15 +23,19 @@ class Data_reader:
     request_dict: dict
     distance_df : pd.DataFrame
     aircraft_dict : dict
+    duration_df : pd.DataFrame
+    max_arc_time : int
 
     def __init__(self):
         self.make_input_data_frames()
+        self.timestep_duration = 4
 
         self.create_airport_dict()
         self.create_OD_df()
         self.create_request_dict()
         self.create_distance_df()
         self.create_aircraft_dict()
+        self.create_duration_df()
 
     def make_input_data_frames(self):
         """
@@ -160,13 +164,21 @@ class Data_reader:
             }
         }
 
-    def export(self):
-        """
-        Call this function to export the usefull dictionaries, lists and DataFrames for network generation
-        :return: airport_dict, OD_df, OD_list, request_dict, distance_df, aircraft_dict
-        """
+    def create_duration_df(self):
+        airports = self.airport_dict.keys()
+        self.duration_df = pd.DataFrame(index=airports,columns=airports,data=0)
 
-        return self.airport_dict, self.OD_df, self.OD_list, self.request_dict, self.distance_df, self.aircraft_dict
+        self.max_arc_time = 0
+        for airport_i_ref, airport_i in self.airport_dict.items():
+            for airport_j_ref, airport_j in self.airport_dict.items():
+
+                denominator = self.distance_df.loc[airport_i_ref,airport_j_ref]/self.aircraft_dict["AC_1"]["speed"] + \
+                           self.aircraft_dict["AC_1"]["TAT"] + self.aircraft_dict["AC_1"]["LTO"]
+
+                if airport_i_ref != airport_j_ref:
+                    arc_time = ceil(denominator/self.timestep_duration)*self.timestep_duration
+                    self.max_arc_time = max(arc_time,self.max_arc_time)
+                    self.duration_df.loc[airport_i_ref,airport_j_ref] = arc_time
 
 if __name__ == '__main__':
     D = Data_reader()
@@ -181,4 +193,4 @@ if __name__ == '__main__':
     #
     # print(distance_df)
     # print(OD_list)
-    print(vars(D)["aircraft_dict"])
+    print(vars(D)["max_arc_time"])
