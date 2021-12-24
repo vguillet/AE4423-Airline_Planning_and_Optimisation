@@ -163,10 +163,10 @@ class Data_reader:
     def export(self):
         """
         Call this function to export the usefull dictionaries, lists and DataFrames for network generation
-        :return: airport_dict, OD_df, OD_list, request_dict, distance_df
+        :return: airport_dict, OD_df, OD_list, request_dict, distance_df, aircraft_dict
         """
 
-        return self.airport_dict, self.OD_df, self.OD_list, self.request_dict, self.distance_df
+        return self.airport_dict, self.OD_df, self.OD_list, self.request_dict, self.distance_df, self.aircraft_dict
 
 if __name__ == '__main__':
     D = Data_reader()
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     #     print(airport_ref,":",airport)
     # # print(D.OD_list)
     # # print(D.request_dict)
-    # airport_dict, OD_df, OD_list, request_dict, distance_df = D.export()
+    # airport_dict, OD_df, OD_list, request_dict, distance_df, aircraft_dict = D.export()
     # for request_ID, request in request_dict.items():
     #     print(request_ID,":",request)
     #
