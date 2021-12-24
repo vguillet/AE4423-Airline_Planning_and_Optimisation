@@ -21,8 +21,8 @@ class Data_reader:
     OD_df: pd.DataFrame
     OD_list: list
     request_dict: dict
-    distance_df : pd.DataFrame
-    aircraft_dict : dict
+    distance_df: pd.DataFrame
+    aircraft_dict: dict
 
     def __init__(self):
         self.make_input_data_frames()
