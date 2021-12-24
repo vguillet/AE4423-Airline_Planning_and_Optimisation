@@ -1,3 +1,10 @@
+"""
+Created on 24 dec. 2021
+@author: Group 10
+@course: AE4423, Airline planning and optimisation
+"""
+
+
 import pandas as pd
 
 
