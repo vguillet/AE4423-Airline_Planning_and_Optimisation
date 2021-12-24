@@ -17,11 +17,12 @@ class Data_reader:
     requests_input_df: pd.DataFrame
 
     """These are all the usefull dicts, lists, and DataFrames to be returned in the export function"""
-    airports_dict: dict
+    airport_dict: dict
     OD_df: pd.DataFrame
     OD_list: list
-    requests_dict: dict
+    request_dict: dict
     distance_df : pd.DataFrame
+    aircraft_dict : dict
 
     def __init__(self):
         self.make_input_data_frames()
@@ -140,10 +141,13 @@ class Data_reader:
 
                 self.distance_df.loc[airport_i_ref,airport_j_ref] = 2 * R_E * arcsin(sqrt(term_1+term_2)) # TODO: check unit conversion
 
+    def create_aircraft_dict(self):
+        self.aircraft_dict = {} # TODO TODO
+
     def export(self):
         """
         Call this function to export the usefull dictionaries, lists and DataFrames for network generation
-        :return: airports_dict, OD_df, OD_list, requests_dict, distance_df
+        :return: airport_dict, OD_df, OD_list, request_dict, distance_df
         """
 
         return self.airports_dict, self.OD_df, self.OD_list, self.requests_dict, self.distance_df
@@ -154,9 +158,9 @@ if __name__ == '__main__':
     for airport_ref, airport in D.airports_dict.items():
         print(airport_ref,":",airport)
     # print(D.OD_list)
-    # print(D.requests_dict)
-    airports_dict, OD_df, OD_list, requests_dict, distance_df = D.export()
-    for request_ID, request in requests_dict.items():
+    # print(D.request_dict)
+    airport_dict, OD_df, OD_list, request_dict, distance_df = D.export()
+    for request_ID, request in request_dict.items():
         print(request_ID,":",request)
 
     print(distance_df)
