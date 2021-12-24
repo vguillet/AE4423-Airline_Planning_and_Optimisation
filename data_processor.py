@@ -6,8 +6,7 @@ Created on 24 dec. 2021
 
 
 import pandas as pd
-from numpy import pi, sin, cos, arcsin, sqrt, ceil, floor
-from copy import deepcopy
+from numpy import pi, sin, cos, arcsin, sqrt, ceil
 
 class Data_reader:
     """These are the DataFrames created from the given Excel files"""
@@ -28,7 +27,7 @@ class Data_reader:
 
     def __init__(self):
         self.make_input_data_frames()
-        self.timestep_duration = 4
+        self.timestep_duration = 4 # hours
 
         self.create_airport_dict()
         self.create_OD_df()
@@ -147,6 +146,9 @@ class Data_reader:
                 self.distance_df.loc[airport_i_ref,airport_j_ref] = 2 * R_E * arcsin(sqrt(term_1+term_2)) # TODO: check unit conversion
 
     def create_aircraft_dict(self):
+        """
+        The aircraft dict has the information about each aircraft type
+        """
         self.aircraft_dict = {
             "AC_1" : {
                 "speed"             : 800, # km/h TODO: check unit conversion
@@ -165,6 +167,10 @@ class Data_reader:
         }
 
     def create_duration_df(self):
+        """
+        Duration of a flight arc rounded up to fit the timesteps
+            Note that the duration is equal for both aircraft types, because they have equal speed, LTO and TAT.
+        """
         airports = self.airport_dict.keys()
         self.duration_df = pd.DataFrame(index=airports,columns=airports,data=0)
 
@@ -193,4 +199,4 @@ if __name__ == '__main__':
     #
     # print(distance_df)
     # print(OD_list)
-    print(vars(D)["max_arc_time"])
+    print(vars(D)["duration_df"])
