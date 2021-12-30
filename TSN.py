@@ -1,4 +1,4 @@
-from data_processor import Data_reader
+from Data_processor import Data_reader
 
 
 class Time_space_network:
