@@ -6,7 +6,7 @@ Created on 24 dec. 2021
 
 
 import pandas as pd
-from numpy import pi, sin, cos, arcsin, sqrt, ceil
+from numpy import pi, sin, cos, arcsin, sqrt, ceil, floor
 
 class Data_reader:
     """These are the DataFrames created from the given Excel files"""
@@ -28,6 +28,7 @@ class Data_reader:
     def __init__(self):
         self.make_input_data_frames()
         self.timestep_duration = 4 # hours
+        self.planning_horizon = 96 # TODO: take from here in netwerk gereration
 
         self.create_airport_dict()
         self.create_OD_df()
@@ -115,13 +116,23 @@ class Data_reader:
         The item per ID is the request, which is a sub_dictionary with the information about the reqeust"""
         self.request_dict = {}
         for i in self.request_input_df.index:
+            release_stamp = ceil(self.request_input_df.loc[i,"Release time [minutes]"]/60/self.timestep_duration)
+            if release_stamp < 0:
+                release_stamp = 0
+
+            due_stamp = floor(self.request_input_df.loc[i,"Due date [minutes]"]/60/self.timestep_duration)
+            if due_stamp > self.planning_horizon/self.timestep_duration:
+                due_stamp = self.planning_horizon/self.timestep_duration
+
             self.request_dict[self.request_input_df.loc[i,"Request ID"]] = {
-                "weight":       self.request_input_df.loc[i,"Weight [ton]"], # TODO: check unit conversion!
-                "airport_O":    self.request_input_df.loc[i,"Origin airport"],
-                "airport_D":    self.request_input_df.loc[i,"Destination airport"],
-                "release_time": self.request_input_df.loc[i,"Release time [minutes]"], # TODO: check unit conversion!
-                "due_time":     self.request_input_df.loc[i,"Due date [minutes]"], # TODO: check unit conversion!
-                "penalty":      self.request_input_df.loc[i,"Penalty [MU/ton]"], # TODO: check unit conversion!
+                "weight":        self.request_input_df.loc[i,"Weight [ton]"], # TODO: check unit conversion!
+                "airport_O":     self.request_input_df.loc[i,"Origin airport"],
+                "airport_D":     self.request_input_df.loc[i,"Destination airport"],
+                "release_time":  self.request_input_df.loc[i,"Release time [minutes]"], # TODO: check unit conversion!
+                "release_stamp": release_stamp,
+                "due_time":      self.request_input_df.loc[i,"Due date [minutes]"], # TODO: check unit conversion!
+                "due_stamp":     due_stamp,
+                "penalty":       self.request_input_df.loc[i,"Penalty [MU/ton]"], # TODO: check unit conversion!
             }
 
     def create_distance_df(self):
