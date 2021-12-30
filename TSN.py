@@ -1,20 +1,25 @@
-from Data_processor import Data_reader
+from Data_processor import Data_processor
 
 
 class Time_space_network:
-    def __init__(self, timestep_count):
+    def __init__(self):
         self.network = []
 
         self.flight_arc_lst = []
         self.ground_arc_lst = []
         self.ns_arc_lst = []
 
-        self.data = Data_reader()
+        self.data = Data_processor()
+        timestep_count = int(self.data.planning_horizon/self.data.timestep_duration + 1)
 
         for _ in range(timestep_count):
             self.add_timestep()
 
         self.add_ns_arcs()
+
+    @property
+    def arc_lst(self):
+        return self.flight_arc_lst + self.ground_arc_lst + self.ns_arc_lst
 
     def add_timestep(self):
         # -> Creating timestep node layer
@@ -28,16 +33,21 @@ class Time_space_network:
 
     def add_ns_arcs(self):
         for request_id, request in self.data.request_dict.items():
+            start_node = self.network[request["release_step"]][request["airport_O"]]
+            end_node = self.network[request["due_step"]][request["airport_D"]]
+
             ns_arc = Arc(type="NS",
-                         origin=request["airport_O"],
-                         destination=request["airport_D"],
+                         origin=start_node.ref,
+                         origin_timestep=start_node.timestep, # TODO: dubbelcheck if release step == this
+                         destination=end_node.ref,
+                         destination_timestep=end_node.timestep, # TODO: dubbelcheck if due step == this
                          request_id=request_id)
 
             # -> Add arc to origin node
-            self.network[request["release_stamp"]][request["airport_O"]].ns_arc_lst.append(ns_arc)
+            start_node.ns_arc_lst.append(ns_arc)
 
             # -> Add arc to destination node
-            self.network[request["due_stamp"]][request["airport_D"]].ns_arc_lst.append(ns_arc)
+            end_node.ns_arc_lst.append(ns_arc)
 
             # -> Add arc to overall arc list
             self.ns_arc_lst.append(ns_arc)
@@ -47,7 +57,7 @@ class Node:
     def __init__(self, airport_ref, TSN):
         self.airport_ref = airport_ref
         self.timestep = len(TSN.network)
-        self.node_ref = f"{self.timestep}-{self.airport_ref}"
+        self.ref = f"{self.timestep}-{self.airport_ref}"
 
         self.flight_arc_lst = []
         self.ground_arc_lst = []
@@ -56,7 +66,7 @@ class Node:
         self.connect_node(TSN=TSN)
 
     def __str__(self):
-        return f"Node: {self.node_ref}"
+        return f"Node: {self.ref}"
 
     def __repr__(self):
         return self.__str__()
@@ -77,7 +87,7 @@ class Node:
                             if delta_t == TSN.data.timestep_duration:
                                 new_ground_arc = Arc(type="Ground",
                                                      origin=node.node_ref,
-                                                     destination=self.node_ref)
+                                                     destination=self.ref)
 
                                 TSN.ground_arc_lst.append(new_ground_arc)
                                 self.ground_arc_lst.append(new_ground_arc)
@@ -88,7 +98,9 @@ class Node:
                             if TSN.data.OD_df.loc[node.airport_ref, self.airport_ref] == 1:
                                 new_flight_arc = Arc(type="Flight",
                                                      origin=node.node_ref,
-                                                     destination=self.node_ref)
+                                                     origin_timestep=node.timestep,
+                                                     destination=self.ref,
+                                                     destination_timestep=self.timestep)
 
                                 # -> Add arc to origin node
                                 node.flight_arc_lst.append(new_flight_arc)  # Start (previous) node
@@ -104,27 +116,34 @@ class Node:
 
 
 class Arc:
-    def __init__(self, type, origin, destination, request_id=None):
+    def __init__(self, type, origin, origin_timestep, destination, destination_timestep, request_id=None):
         self.type = type
+
         self.origin = origin
+        self.origin_timestep = origin_timestep
+
         self.destination = destination
+        self.destination_timestep = destination_timestep
+
         self.request_id = request_id
+
+        if self.request_id is None:
+            self.ref = f"Arc: {self.type} - {self.origin}->{self.destination}"
+        else:
+            self.ref = f"Arc: {self.type} (id:{self.request_id}) - {self.origin}->{self.destination}"
 
         self.ac1_used = None
         self.ac2_used = None
 
     def __str__(self):
-        if self.request_id is None:
-            return f"Arc: {self.type} - {self.origin}->{self.destination}"
-        else:
-            return f"Arc: {self.type} (id:{self.request_id}) - {self.origin}->{self.destination}"
+        return self.ref
 
     def __repr__(self):
         return self.__str__()
 
 
 if __name__ == '__main__':
-    net = Time_space_network(timestep_count=25)
+    net = Time_space_network()
     print(net.network)
 
     node_count = 0

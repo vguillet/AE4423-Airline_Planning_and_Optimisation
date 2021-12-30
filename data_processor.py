@@ -8,7 +8,8 @@ Created on 24 dec. 2021
 import pandas as pd
 from numpy import pi, sin, cos, arcsin, sqrt, ceil, floor
 
-class Data_reader:
+
+class Data_processor:
     """These are the DataFrames created from the given Excel files"""
     airport_input_df: pd.DataFrame
     # fleet_initial_final_position_input_df : pd.DataFrame
@@ -116,22 +117,22 @@ class Data_reader:
         The item per ID is the request, which is a sub_dictionary with the information about the reqeust"""
         self.request_dict = {}
         for i in self.request_input_df.index:
-            release_stamp = int(ceil(self.request_input_df.loc[i,"Release time [minutes]"]/60/self.timestep_duration))
-            if release_stamp < 0:
-                release_stamp = 0
+            release_step = int(ceil(self.request_input_df.loc[i,"Release time [minutes]"]/60/self.timestep_duration))
+            if release_step < 0:
+                release_step = 0
 
-            due_stamp = int(floor(self.request_input_df.loc[i,"Due date [minutes]"]/60/self.timestep_duration))
-            if due_stamp > self.planning_horizon/self.timestep_duration:
-                due_stamp = self.planning_horizon/self.timestep_duration
+            due_step = int(floor(self.request_input_df.loc[i,"Due date [minutes]"]/60/self.timestep_duration))
+            if due_step > self.planning_horizon/self.timestep_duration:
+                due_step = self.planning_horizon/self.timestep_duration
 
             self.request_dict[self.request_input_df.loc[i,"Request ID"]] = {
                 "weight":        self.request_input_df.loc[i,"Weight [ton]"], # TODO: check unit conversion!
                 "airport_O":     self.request_input_df.loc[i,"Origin airport"],
                 "airport_D":     self.request_input_df.loc[i,"Destination airport"],
                 "release_time":  self.request_input_df.loc[i,"Release time [minutes]"], # TODO: check unit conversion!
-                "release_stamp": release_stamp,
+                "release_step":  release_step,
                 "due_time":      self.request_input_df.loc[i,"Due date [minutes]"], # TODO: check unit conversion!
-                "due_stamp":     due_stamp,
+                "due_step":      due_step,
                 "penalty":       self.request_input_df.loc[i,"Penalty [MU/ton]"], # TODO: check unit conversion!
             }
 
