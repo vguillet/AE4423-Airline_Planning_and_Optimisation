@@ -14,8 +14,6 @@ class Time_space_network:
         for _ in range(timestep_count):
             self.add_timestep()
 
-        return
-
     def add_timestep(self):
         # -> Creating timestep node layer
         network_layer = {}
@@ -25,7 +23,6 @@ class Time_space_network:
                                               TSN=self)
 
         self.network.append(network_layer)
-        return
 
 
 class Node:
@@ -84,8 +81,6 @@ class Node:
 
                 else:
                     break
-
-        return
 
 
 class Arc:
