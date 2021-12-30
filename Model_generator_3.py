@@ -80,7 +80,7 @@ class Model_3:
         for arc in self.TSN.arc_lst:
             decision_variable_dict["z"][arc.ref] = {}
 
-            for request_ID, request in self.TSN.data.request_dict:
+            for request_ID, request in self.TSN.data.request_dict.items():
                 decision_variable_dict["z"][arc.ref][request_ID] = \
                     self.model.addVar(vtype=GRB.BINARY,
                                       name=f"z-{arc.ref}-{request_ID}")

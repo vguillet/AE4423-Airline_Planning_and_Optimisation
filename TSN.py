@@ -86,8 +86,10 @@ class Node:
                         if self.airport_ref == node.airport_ref:
                             if delta_t == TSN.data.timestep_duration:
                                 new_ground_arc = Arc(type="Ground",
-                                                     origin=node.node_ref,
-                                                     destination=self.ref)
+                                                     origin=node.ref,
+                                                     origin_timestep=node.timestep,
+                                                     destination=self.ref,
+                                                     destination_timestep=self.timestep)
 
                                 TSN.ground_arc_lst.append(new_ground_arc)
                                 self.ground_arc_lst.append(new_ground_arc)
@@ -97,7 +99,7 @@ class Node:
                             # -> If arc is viable
                             if TSN.data.OD_df.loc[node.airport_ref, self.airport_ref] == 1:
                                 new_flight_arc = Arc(type="Flight",
-                                                     origin=node.node_ref,
+                                                     origin=node.ref,
                                                      origin_timestep=node.timestep,
                                                      destination=self.ref,
                                                      destination_timestep=self.timestep)
