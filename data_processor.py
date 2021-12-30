@@ -116,11 +116,11 @@ class Data_reader:
         The item per ID is the request, which is a sub_dictionary with the information about the reqeust"""
         self.request_dict = {}
         for i in self.request_input_df.index:
-            release_stamp = ceil(self.request_input_df.loc[i,"Release time [minutes]"]/60/self.timestep_duration)
+            release_stamp = int(ceil(self.request_input_df.loc[i,"Release time [minutes]"]/60/self.timestep_duration))
             if release_stamp < 0:
                 release_stamp = 0
 
-            due_stamp = floor(self.request_input_df.loc[i,"Due date [minutes]"]/60/self.timestep_duration)
+            due_stamp = int(floor(self.request_input_df.loc[i,"Due date [minutes]"]/60/self.timestep_duration))
             if due_stamp > self.planning_horizon/self.timestep_duration:
                 due_stamp = self.planning_horizon/self.timestep_duration
 
