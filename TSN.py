@@ -61,7 +61,7 @@ class Node:
 
         self.out_flight_arc_lst = []
         self.out_ground_arc_lst = []
-        self.out_ns_arc_
+        self.out_ns_arc_lst = []
 
         self.in_flight_arc_lst = []
         self.in_ground_arc_lst = []
@@ -137,7 +137,15 @@ class Node:
 
     def build_v(self, TSN: Time_space_network):
         v = {}
-        for r, request in TSN.data.request_dict():
+        for r, request in TSN.data.request_dict.items():
+            if request["release_step"] == self.timestep and request["airport_O"] == self.airport_ref:
+                v[r] = -1
+            elif request["due_step"] == self.timestep and request["airport_D"] == self.airport_ref:
+                v[r] = 1
+            else:
+                v[r] = 0
+        return v
+
 
 
 class Arc:
