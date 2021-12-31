@@ -172,12 +172,9 @@ class Model_3:
 
                         constraint_l += self.decision_variable_dict["z"][a][r]
 
-                    
-                    self.model.addConstr(constraint_l == h,
-                                         name=f"Conservation_of_aircraft_flow-{t}-{airport_ref}-{k}")
-
-
-
+                    # TODO: Double check v
+                    self.model.addConstr(constraint_l == node.v[r],
+                                         name=f"Conservation_of_request_flow-{t}-{airport_ref}-{r}")
 
     def add_weight_capacity_constraint(self, display_progress_bars=False):
         # ... per flight arc

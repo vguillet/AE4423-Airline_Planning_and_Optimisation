@@ -38,9 +38,9 @@ class Time_space_network:
 
             ns_arc = Arc(type="NS",
                          origin=start_node.ref,
-                         origin_timestep=start_node.timestep, # TODO: dubbelcheck if release step == this
+                         origin_timestep=start_node.timestep, # TODO: double check if release step == this
                          destination=end_node.ref,
-                         destination_timestep=end_node.timestep, # TODO: dubbelcheck if due step == this
+                         destination_timestep=end_node.timestep, # TODO: double check if due step == this
                          request_id=request_id)
 
             # -> Add arc to origin node
@@ -61,7 +61,7 @@ class Node:
 
         self.out_flight_arc_lst = []
         self.out_ground_arc_lst = []
-        self.out_ns_arc_
+        self.out_ns_arc_lst = []
 
         self.in_flight_arc_lst = []
         self.in_ground_arc_lst = []
