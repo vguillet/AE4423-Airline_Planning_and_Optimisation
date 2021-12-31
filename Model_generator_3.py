@@ -207,6 +207,11 @@ class Model_3:
         # ... per aircraft
         for k, aircraft in self.TSN.data.aircraft_dict.items():
             # ... per flight arc
+            for flight_arc in self.TSN.flight_arc_lst:
+                f = flight_arc.ref
+
+                objective_function +=
+
             pass
 
 
