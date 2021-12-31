@@ -52,6 +52,8 @@ class Model_3:
 
         # -> Write model
         self.model.write("Model_3.lp")
+        self.model.printStats()
+        self.model.optimize()
 
     def generate_decision_variables(self):
         decision_variable_dict = {"x": {},
@@ -83,7 +85,11 @@ class Model_3:
             a = arc.ref
             decision_variable_dict["z"][a] = {}
 
-            for r, request in self.TSN.data.request_dict.items():
+            for r, request in self.TSN.data.request_dict.items(): #TODO: these if statementes are no where mentioned in the assignment but they should be here right?
+                decision_variable_dict["z"][a][r] = 0
+                if arc.type == "NS":
+                    if arc.request_id != r:
+                        continue
                 decision_variable_dict["z"][a][r] = \
                     self.model.addVar(vtype=GRB.BINARY,
                                       name=f"z-{a}-{r}")
@@ -200,6 +206,20 @@ class Model_3:
         # TODO/ Finish constraint / decide whether keep or not
         pass
 
+    def MCf(self,flight_arc):
+        i = self.TSN.data.airport_dict[flight_arc.origin_airport]["index"]
+        j = self.TSN.data.airport_dict[flight_arc.destination_airport]["index"]
+        n = len(self.TSN.data.airport_dict)
+        depart_time = flight_arc.origin_timestep * self.TSN.data.timestep_duration
+        h = depart_time % 24
+        d = (depart_time - h) / 24
+        # print(f"time = {depart_time}, d = {d}, h = {h}")
+        MCf = 0.05 * (i + j) / (2 * n - 1) + 0.15 * np.sin(2 * np.pi * h / 24) ** 2 + 0.005 * d  # MU/(km*ton)
+        return MCf
+
+    def Df(self,flight_arc):
+        return self.TSN.data.distance_df.loc[flight_arc.origin_airport,flight_arc.destination_airport] # km
+
     def add_objective_function(self, display_progress_bars=False):
         # --> Initiating objective function linear expression
         objective_function = gp.LinExpr()
@@ -209,11 +229,33 @@ class Model_3:
             # ... per flight arc
             for flight_arc in self.TSN.flight_arc_lst:
                 f = flight_arc.ref
+                Cfk = self.TSN.data.aircraft_dict[k]["operational_cost"] # MU/km
+                Df = self.Df(flight_arc)
 
-                objective_function +=
+                objective_function += Cfk*Df*self.decision_variable_dict["x"][f][k] # TODO: check
 
-            pass
+        # ... per flight arc
+        for flight_arc in self.TSN.flight_arc_lst:
+            f = flight_arc.ref
+            # ... per request
+            for r, request in self.TSN.data.request_dict.items():
+                MCf = self.MCf(flight_arc) # MU/(km*ton)
+                Df = self.Df(flight_arc)
+                Wr = request["weight"] #ton
 
+                objective_function += MCf*Df*Wr*self.decision_variable_dict["z"][f][r]
+
+        # ... per request
+        for r, request in self.TSN.data.request_dict.items():
+            origin = f"{request['release_step']}-{request['airport_O']}"
+            destination =  f"{request['due_step']}-{request['airport_D']}"
+            s = f"Arc: NS (id:{r}) - {origin}->{destination}" #TODO: not dynamic if changed in TNS arc object fix here
+            PCr = request["penalty"] # MU/ton
+            Wr = request["weight"] #ton
+
+            objective_function += PCr*Wr*self.decision_variable_dict["z"][s][r]
+
+        self.model.setObjective(objective_function, GRB.MINIMIZE)
 
 if __name__ == "__main__":
     # ======================================================================================================

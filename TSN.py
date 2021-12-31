@@ -152,9 +152,11 @@ class Arc:
         self.type = type
 
         self.origin = origin
+        self.origin_airport = origin.split('-')[1]
         self.origin_timestep = origin_timestep
 
         self.destination = destination
+        self.destination_airport = destination.split('-')[1]
         self.destination_timestep = destination_timestep
 
         self.request_id = request_id
@@ -162,7 +164,7 @@ class Arc:
         if self.request_id is None:
             self.ref = f"Arc: {self.type} - {self.origin}->{self.destination}"
         else:
-            self.ref = f"Arc: {self.type} (id:{self.request_id}) - {self.origin}->{self.destination}"
+            self.ref = f"Arc: {self.type} (id:{self.request_id}) - {self.origin}->{self.destination}" #TODO: if changed, change in Model_generator as well
 
         self.ac1_used = None
         self.ac2_used = None
