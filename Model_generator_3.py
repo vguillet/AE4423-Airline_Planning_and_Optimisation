@@ -125,7 +125,10 @@ class Model_3:
                                  name=f"Weight capacity-{f}")
 
     def add_net_aircraft_flow_constraint(self, display_progress_bars=False):
-        pass
+        # TODO/ Finish constraint / decide whether keep or not
+        # ... per aircraft
+        for k, aircraft in self.TSN.data.aircraft_dict.items():
+            constraint_l = gp.LinExpr()
 
     def add_objective_function(self, display_progress_bars=False):
         pass
