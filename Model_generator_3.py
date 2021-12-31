@@ -108,7 +108,7 @@ class Model_3:
     def add_conservation_of_aircraft_flow_constraint(self, display_progress_bars=False):
         # ... per node
         for timestep in self.TSN.network:
-            for n, node in self.TSN.network[timestep].items():
+            for n, node in timestep.items():
 
                 # ... per aircraft type
                 for k in self.TSN.data.aircraft_dict.keys():
@@ -140,7 +140,7 @@ class Model_3:
                 constraint_r += aircraft["payload"] * self.decision_variable_dict["x"][f][k]
 
             self.model.addConstr(constraint_l <= constraint_r,
-                                 name=f"Weight capacity-{f}")print(f"Weight capacity-{f}")
+                                 name=f"Weight capacity-{f}")
 
     def add_net_aircraft_flow_constraint(self, display_progress_bars=False):
         # TODO/ Finish constraint / decide whether keep or not
