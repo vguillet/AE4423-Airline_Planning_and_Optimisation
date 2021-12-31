@@ -61,12 +61,13 @@ class Node:
 
         self.out_flight_arc_lst = []
         self.out_ground_arc_lst = []
-        self.out_ns_arc_lst = []
+        self.out_ns_arc_
 
         self.in_flight_arc_lst = []
         self.in_ground_arc_lst = []
         self.in_ns_arc_lst = []
 
+        self.v = self.build_v(TSN=TSN)
         self.connect_node(TSN=TSN)
 
     def __str__(self):
@@ -74,6 +75,14 @@ class Node:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def in_arc_lst(self):
+        return self.in_flight_arc_lst + self.in_ground_arc_lst + self.in_ns_arc_lst
+
+    @property
+    def out_arc_lst(self):
+        return self.out_flight_arc_lst + self.out_ground_arc_lst + self.out_ns_arc_lst
 
     def connect_node(self, TSN: Time_space_network):
         if len(TSN.network) != 0:
@@ -125,6 +134,10 @@ class Node:
 
                 else:
                     break
+
+    def build_v(self, TSN: Time_space_network):
+        v = {}
+        for r, request in TSN.data.request_dict():
 
 
 class Arc:

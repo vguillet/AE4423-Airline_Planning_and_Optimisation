@@ -107,23 +107,79 @@ class Model_3:
 
     def add_conservation_of_aircraft_flow_constraint(self, display_progress_bars=False):
         # ... per node
-        for timestep in self.TSN.network:
-            for n, node in timestep.items():
+        for t, timestep in enumerate(self.TSN.network):     # ... per timestep
+            for airport_ref, node in timestep.items():      # ... per airport
 
                 # ... per aircraft type
                 for k in self.TSN.data.aircraft_dict.keys():
                     constraint_l = gp.LinExpr()
 
-                    # ... per flight arc
-                    for flight_arc in self.TSN.flight_arc_lst:
+                    # ... per flight arc exiting the node
+                    for flight_arc in node.out_flight_arc_lst:
                         f = flight_arc.ref
 
+                        constraint_l -= self.decision_variable_dict["x"][f][k]
+
+                    # ... per ground arc exiting the node
+                    for ground_arc in node.out_ground_arc_lst:
+                        g = ground_arc.ref
+
+                        constraint_l -= self.decision_variable_dict["y"][g][k]
+
+                    # ... per flight arc entering the node
+                    for flight_arc in node.in_flight_arc_lst:
+                        f = flight_arc.ref
+
+                        constraint_l += self.decision_variable_dict["x"][f][k]
+
+                    # ... per ground arc entering the node
+                    for ground_arc in node.in_ground_arc_lst:
+                        g = ground_arc.ref
+
+                        constraint_l += self.decision_variable_dict["y"][g][k]
+
+                    # TODO: Double check h sign
+                    if t == 0:
+                        h = -self.TSN.data.airport_dict[airport_ref][k]
+
+                    elif t == len(self.TSN.network)-1:
+                        h = self.TSN.data.airport_dict[airport_ref][k]
+
+                    else:
+                        h = 0
+
+                    self.model.addConstr(constraint_l == h,
+                                         name=f"Conservation_of_aircraft_flow-{t}-{airport_ref}-{k}")
 
     def add_conservation_of_request_flow_constraint(self, display_progress_bars=False):
-        pass
+        # ... per node
+        for t, timestep in enumerate(self.TSN.network):     # ... per timestep
+            for airport_ref, node in timestep.items():      # ... per airport
+
+                # ... per request
+                for r, request in self.TSN.data.request_dict.items():
+                    constraint_l = gp.LinExpr()
+
+                    # ... per arc existing the node
+                    for arc in node.out_arc_lst:
+                        a = arc.ref
+
+                        constraint_l -= self.decision_variable_dict["z"][a][r]
+
+                    # ... per arc entering the node
+                    for arc in node.in_arc_lst:
+                        a = arc.ref
+
+                        constraint_l += self.decision_variable_dict["z"][a][r]
+
+                    
+                    self.model.addConstr(constraint_l == h,
+                                         name=f"Conservation_of_aircraft_flow-{t}-{airport_ref}-{k}")
+
+
+
 
     def add_weight_capacity_constraint(self, display_progress_bars=False):
-        # TODO: Double check constraint
         # ... per flight arc
         for flight_arc in self.TSN.flight_arc_lst:
             f = flight_arc.ref
