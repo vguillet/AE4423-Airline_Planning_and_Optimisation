@@ -107,6 +107,7 @@ class Model_3:
 
     def add_conservation_of_aircraft_flow_constraint(self, display_progress_bars=False):
         # ... per node
+        sum_h_check = 0 # TODO: remove
         for t, timestep in enumerate(self.TSN.network):     # ... per timestep
             for airport_ref, node in timestep.items():      # ... per airport
 
@@ -147,9 +148,10 @@ class Model_3:
 
                     else:
                         h = 0
-
+                    sum_h_check += h # TODO: remove
                     self.model.addConstr(constraint_l == h,
                                          name=f"Conservation_of_aircraft_flow-{t}-{airport_ref}-{k}")
+        print(f"CHECK !!! sum_h={h} should be 0") #TODO : remove
 
     def add_conservation_of_request_flow_constraint(self, display_progress_bars=False):
         # ... per node
@@ -197,12 +199,16 @@ class Model_3:
 
     def add_net_aircraft_flow_constraint(self, display_progress_bars=False):
         # TODO/ Finish constraint / decide whether keep or not
-        # ... per aircraft
-        for k, aircraft in self.TSN.data.aircraft_dict.items():
-            constraint_l = gp.LinExpr()
+        pass
 
     def add_objective_function(self, display_progress_bars=False):
-        pass
+        # --> Initiating objective function linear expression
+        objective_function = gp.LinExpr()
+
+        # ... per aircraft
+        for k, aircraft in self.TSN.data.aircraft_dict.items():
+            # ... per flight arc
+    pass
 
 
 if __name__ == "__main__":

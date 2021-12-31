@@ -147,7 +147,6 @@ class Node:
         return v
 
 
-
 class Arc:
     def __init__(self, type, origin, origin_timestep, destination, destination_timestep, request_id=None):
         self.type = type
