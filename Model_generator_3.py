@@ -89,7 +89,7 @@ class Model_3:
 
     def add_flight_arc_usage_constraint(self, display_progress_bars=False):
 
-        # ... per arc
+        # ... per flight arc
         for f in self.decision_variable_dict["x"].keys():
             constraint_l = gp.LinExpr()
 
@@ -107,7 +107,21 @@ class Model_3:
         pass
 
     def add_weight_capacity_constraint(self, display_progress_bars=False):
-        pass
+        # ... per flight arc
+        for f in self.decision_variable_dict["x"].keys():
+            constraint_l = gp.LinExpr()
+            constraint_r = gp.LinExpr()
+
+            # ... per request
+            for r, request in self.TSN.data.request_dict.items():
+                constraint_l += request["weight"] * self.decision_variable_dict["z"][f][r]
+
+            # ... per aircraft
+            for k, aircraft in self.TSN.data.aircraft_dict.items():
+                constraint_r += aircraft["payload"] * self.decision_variable_dict["x"][f][k]
+
+            self.model.addConstr(constraint_l <= constraint_r,
+                                 name=f"Weight capacity-{f}")
 
     def add_net_aircraft_flow_constraint(self, display_progress_bars=False):
         pass
