@@ -107,6 +107,7 @@ class Model_3:
         pass
 
     def add_weight_capacity_constraint(self, display_progress_bars=False):
+        # TODO: Double check constraint
         # ... per flight arc
         for f in self.decision_variable_dict["x"].keys():
             constraint_l = gp.LinExpr()
