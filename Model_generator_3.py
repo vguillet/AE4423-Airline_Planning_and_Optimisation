@@ -59,22 +59,22 @@ class Model_3:
                                   "z": {}}
 
         # -> Adding flight arc decision variables - x_f_k
-        for arc in self.TSN.flight_arc_lst:
-            decision_variable_dict["x"][arc.ref] = {}
+        for flight_arc in self.TSN.flight_arc_lst:
+            decision_variable_dict["x"][flight_arc.ref] = {}
 
             for aircraft_ref, aircraft in self.TSN.data.aircraft_dict.items():
-                decision_variable_dict["x"][arc.ref][aircraft_ref] = \
+                decision_variable_dict["x"][flight_arc.ref][aircraft_ref] = \
                     self.model.addVar(vtype=GRB.BINARY,
-                                      name=f"x-{arc.ref}-{aircraft_ref}")
+                                      name=f"x-{flight_arc.ref}-{aircraft_ref}")
 
         # -> Adding ground arc decision variables - y_g_k
-        for arc in self.TSN.ground_arc_lst:
-            decision_variable_dict["y"][arc.ref] = {}
+        for ground_arc in self.TSN.ground_arc_lst:
+            decision_variable_dict["y"][ground_arc.ref] = {}
 
             for aircraft_ref, aircraft in self.TSN.data.aircraft_dict.items():
-                decision_variable_dict["y"][arc.ref][aircraft_ref] = \
+                decision_variable_dict["y"][ground_arc.ref][aircraft_ref] = \
                     self.model.addVar(vtype=GRB.INTEGER,
-                                      name=f"y-{arc.ref}-{aircraft_ref}")
+                                      name=f"y-{ground_arc.ref}-{aircraft_ref}")
 
         # -> Adding arc-request decision variables - z_a_r
         for arc in self.TSN.arc_lst:
@@ -90,7 +90,9 @@ class Model_3:
     def add_flight_arc_usage_constraint(self, display_progress_bars=False):
 
         # ... per flight arc
-        for f in self.decision_variable_dict["x"].keys():
+        for flight_arc in self.TSN.flight_arc_lst:
+            f = flight_arc.ref
+
             constraint_l = gp.LinExpr()
 
             # ... per aircraft type
@@ -109,7 +111,9 @@ class Model_3:
     def add_weight_capacity_constraint(self, display_progress_bars=False):
         # TODO: Double check constraint
         # ... per flight arc
-        for f in self.decision_variable_dict["x"].keys():
+        for flight_arc in self.TSN.flight_arc_lst:
+            f = flight_arc.ref
+
             constraint_l = gp.LinExpr()
             constraint_r = gp.LinExpr()
 
@@ -122,7 +126,7 @@ class Model_3:
                 constraint_r += aircraft["payload"] * self.decision_variable_dict["x"][f][k]
 
             self.model.addConstr(constraint_l <= constraint_r,
-                                 name=f"Weight capacity-{f}")
+                                 name=f"Weight capacity-{f}")print(f"Weight capacity-{f}")
 
     def add_net_aircraft_flow_constraint(self, display_progress_bars=False):
         # TODO/ Finish constraint / decide whether keep or not
