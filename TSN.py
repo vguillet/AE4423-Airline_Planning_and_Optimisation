@@ -44,10 +44,10 @@ class Time_space_network:
                          request_id=request_id)
 
             # -> Add arc to origin node
-            start_node.ns_arc_lst.append(ns_arc)
+            start_node.out_ns_arc_lst.append(ns_arc)
 
             # -> Add arc to destination node
-            end_node.ns_arc_lst.append(ns_arc)
+            end_node.in_ns_arc_lst.append(ns_arc)
 
             # -> Add arc to overall arc list
             self.ns_arc_lst.append(ns_arc)
@@ -59,9 +59,13 @@ class Node:
         self.timestep = len(TSN.network)
         self.ref = f"{self.timestep}-{self.airport_ref}"
 
-        self.flight_arc_lst = []
-        self.ground_arc_lst = []
-        self.ns_arc_lst = []
+        self.out_flight_arc_lst = []
+        self.out_ground_arc_lst = []
+        self.out_ns_arc_lst = []
+
+        self.in_flight_arc_lst = []
+        self.in_ground_arc_lst = []
+        self.in_ns_arc_lst = []
 
         self.connect_node(TSN=TSN)
 
@@ -91,8 +95,14 @@ class Node:
                                                      destination=self.ref,
                                                      destination_timestep=self.timestep)
 
+                                # -> Add arc to origin node
+                                node.out_ground_arc_lst.append(new_ground_arc)  # Start (previous) node
+
+                                # -> Add arc to destination node
+                                self.in_ground_arc_lst.append(new_ground_arc)  # End (current) node
+
+                                # -> Add arc to overall arc list
                                 TSN.ground_arc_lst.append(new_ground_arc)
-                                self.ground_arc_lst.append(new_ground_arc)
 
                         # -> Add flight arcs
                         elif TSN.data.duration_df.loc[node.airport_ref, self.airport_ref] == delta_t:
@@ -105,10 +115,10 @@ class Node:
                                                      destination_timestep=self.timestep)
 
                                 # -> Add arc to origin node
-                                node.flight_arc_lst.append(new_flight_arc)  # Start (previous) node
+                                node.out_flight_arc_lst.append(new_flight_arc)  # Start (previous) node
 
                                 # -> Add arc to destination node
-                                self.flight_arc_lst.append(new_flight_arc)  # End (current) node
+                                self.in_flight_arc_lst.append(new_flight_arc)  # End (current) node
 
                                 # -> Add arc to overall arc list
                                 TSN.flight_arc_lst.append(new_flight_arc)
@@ -151,7 +161,7 @@ if __name__ == '__main__':
     node_count = 0
     for timestep in range(len(net.network)):
         if 10 < timestep < 15:
-            print(len(net.network[timestep]["LUX"].flight_arc_lst))
+            print(len(net.network[timestep]["LUX"].in_flight_arc_lst) + len(net.network[timestep]["LUX"].out_flight_arc_lst))
 
         node_count += len(net.network[timestep])
 
