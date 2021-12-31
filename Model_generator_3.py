@@ -60,30 +60,33 @@ class Model_3:
 
         # -> Adding flight arc decision variables - x_f_k
         for flight_arc in self.TSN.flight_arc_lst:
-            decision_variable_dict["x"][flight_arc.ref] = {}
+            f = flight_arc.ref
+            decision_variable_dict["x"][f] = {}
 
-            for aircraft_ref, aircraft in self.TSN.data.aircraft_dict.items():
-                decision_variable_dict["x"][flight_arc.ref][aircraft_ref] = \
+            for k, aircraft in self.TSN.data.aircraft_dict.items():
+                decision_variable_dict["x"][f][k] = \
                     self.model.addVar(vtype=GRB.BINARY,
-                                      name=f"x-{flight_arc.ref}-{aircraft_ref}")
+                                      name=f"x-{f}-{k}")
 
         # -> Adding ground arc decision variables - y_g_k
         for ground_arc in self.TSN.ground_arc_lst:
-            decision_variable_dict["y"][ground_arc.ref] = {}
+            g = ground_arc.ref
+            decision_variable_dict["y"][g] = {}
 
-            for aircraft_ref, aircraft in self.TSN.data.aircraft_dict.items():
-                decision_variable_dict["y"][ground_arc.ref][aircraft_ref] = \
+            for k, aircraft in self.TSN.data.aircraft_dict.items():
+                decision_variable_dict["y"][g][k] = \
                     self.model.addVar(vtype=GRB.INTEGER,
-                                      name=f"y-{ground_arc.ref}-{aircraft_ref}")
+                                      name=f"y-{g}-{k}")
 
         # -> Adding arc-request decision variables - z_a_r
         for arc in self.TSN.arc_lst:
-            decision_variable_dict["z"][arc.ref] = {}
+            a = arc.ref
+            decision_variable_dict["z"][a] = {}
 
-            for request_ID, request in self.TSN.data.request_dict.items():
-                decision_variable_dict["z"][arc.ref][request_ID] = \
+            for r, request in self.TSN.data.request_dict.items():
+                decision_variable_dict["z"][a][r] = \
                     self.model.addVar(vtype=GRB.BINARY,
-                                      name=f"z-{arc.ref}-{request_ID}")
+                                      name=f"z-{a}-{r}")
 
         return decision_variable_dict
 
@@ -96,14 +99,25 @@ class Model_3:
             constraint_l = gp.LinExpr()
 
             # ... per aircraft type
-            for k in self.decision_variable_dict["x"][f].keys():
+            for k in self.TSN.data.aircraft_dict.keys():
                 constraint_l += self.decision_variable_dict["x"][f][k]
 
             self.model.addConstr(constraint_l <= 1,
                                  name=f"Flight_arc_usage-{f}")
 
     def add_conservation_of_aircraft_flow_constraint(self, display_progress_bars=False):
-        pass
+        # ... per node
+        for timestep in self.TSN.network:
+            for n, node in self.TSN.network[timestep].items():
+
+                # ... per aircraft type
+                for k in self.TSN.data.aircraft_dict.keys():
+                    constraint_l = gp.LinExpr()
+
+                    # ... per flight arc
+                    for flight_arc in self.TSN.flight_arc_lst:
+                        f = flight_arc.ref
+
 
     def add_conservation_of_request_flow_constraint(self, display_progress_bars=False):
         pass
