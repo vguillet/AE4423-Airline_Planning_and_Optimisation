@@ -36,7 +36,7 @@ class Model_3:
 
         self.model.Params.OutputFlag = 1    # Disabling the gurobi console output, set to 1 to enable
 
-        self.model.setParam("TimeLimit", 1800)
+        self.model.setParam("TimeLimit", 60*60*1.15)
 
         # -> Creating decision variables
         self.decision_variable_dict = self.generate_decision_variables()
@@ -93,7 +93,7 @@ class Model_3:
                         continue
                 decision_variable_dict["z"][a][r] = \
                     self.model.addVar(vtype=GRB.BINARY,
-                                      name=f"z-{a}-{r}")
+                                      name=f"z-{a}-#{r}#")
 
         return decision_variable_dict
 
@@ -273,13 +273,42 @@ if __name__ == "__main__":
     c_code = {"AC_1":(1,0,0),
               "AC_2":(0,0,1)}
     results = model.model.getVars()
+    # plt.figure()
+    # plt.xticks(range(26))
+    # idx2ref = [""]*6
+    # for airport_ref, airport in model.TSN.data.airport_dict.items():
+    #     idx2ref[airport["index"]-1] = airport_ref
+    # plt.yticks(range(7)[1:],idx2ref)
+
+
     plt.figure()
     plt.xticks(range(26))
     idx2ref = [""]*6
     for airport_ref, airport in model.TSN.data.airport_dict.items():
         idx2ref[airport["index"]-1] = airport_ref
-    print(idx2ref)
-    plt.yticks(range(6),idx2ref)
+    plt.yticks(range(7)[1:],idx2ref)
+    z_dict = {}
+    for r in results:
+        if r.X != 0:
+            if r.varName[0] == "z" and r.varName[7:9] != "NS":
+                print(r.varName[16:],r.X)
+                varName_list = r.varName[16:].replace(">",'').split('-')
+                arc_name = varName_list[0] + '-' + varName_list[1] + '->' + varName_list[2] + '-' + varName_list[3]
+                ID = int(varName_list[-1].replace("#",''))
+                print(arc_name, 'ID:',  ID)
+                try:
+                    z_dict[arc_name] += model.TSN.data.request_dict[ID]["weight"]
+                except:
+                    z_dict[arc_name] = model.TSN.data.request_dict[ID]["weight"]
+    for arc_name, weight in z_dict.items():
+        arc_name = arc_name.split("->")
+        t = [0, 0]
+        n = [0, 0]
+        for i in range(2):
+            t[i] = int(arc_name[i].split("-")[0])
+            n[i] = int(model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
+        plt.plot(t, n, linewidth=weight/15,color=(0,0,0))
+
     for r in results:
         if r.X != 0:
             if r.varName[0] in ["x","y"]:
@@ -291,8 +320,59 @@ if __name__ == "__main__":
                 for i in range(2):
                     t[i] = int(arc_name[i].split("-")[0])
                     n[i] = int(model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
-                plt.plot(t,n,color = c_code[plane])
+                plt.plot(t,n,color = c_code[plane],linestyle=":")
+
+
+
+    # =========================================================== Generate data
+    # -> Arc used (non-NS)
+    total_arc_used = 0
+    f_arc_used = 0
+    g_arc_used = 0
+
+    # -> NS arcs used
+    NS_arc_used = 0
+    # -> Packages handled
+    packages_handled = []
+    packages_not_handled = []
+    packages_not_handled_penalty = 0
+
+    results = model.model.getVars()
+
+    for decision_variable in results:
+        if decision_variable.varName[0] in ["x", "y"] and int(decision_variable.x) == 1:
+            total_arc_used += 1
+
+            if decision_variable.varName[0] == "x":
+                f_arc_used += 1
+            else:
+                g_arc_used += 1
+
+        if decision_variable.varName[0] == "z" and "NS" not in decision_variable.varName:
+            # print(decision_variable.varName, decision_variable.X)
+            package_id = int(decision_variable.varName.split("#")[-2])
+
+            if package_id not in packages_handled and int(decision_variable.x) == 1:
+                packages_handled.append(package_id)
+
+        if decision_variable.varName[0] == "z" and "NS" in decision_variable.varName and int(decision_variable.x) == 1:
+            NS_arc_used += 1
+
+            package_id = int(decision_variable.varName.split("#")[-2])
+            if package_id not in packages_not_handled:
+                packages_not_handled.append(package_id)
+
+                request = model.TSN.data.request_dict[package_id]
+
+                packages_not_handled_penalty += request["penalty"] * request["weight"]
+
+    print(f"- Nb. arcs used: {total_arc_used}")
+    print(f"   > Flight arcs: {f_arc_used}")
+    print(f"   > Ground arcs: {g_arc_used}")
+
+    print(f"- Nb. NS arcs used: {NS_arc_used}")
+    print(f"- Nb. packages handled: {len(packages_handled)}")
+    print(f"- Nb. packages not handled: {len(packages_not_handled)}")
+    print(f"- Total packages not handled penalty: {packages_not_handled_penalty}")
 
     plt.show()
-
-

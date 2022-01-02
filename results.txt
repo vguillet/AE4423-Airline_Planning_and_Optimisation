@@ -1,0 +1,8 @@
+- Nb. arcs used: 63
+   > Flight arcs: 38
+   > Ground arcs: 25
+- Nb. NS arcs used: 15
+- Nb. packages handled: 100
+- Nb. packages not handled: 15
+- Total packages not handled penalty: 1079599.0799999998
+
