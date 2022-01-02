@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+from matplotlib import pyplot as plt
 import plotly.graph_objects as go
 
 # Own modules
@@ -56,9 +57,9 @@ class Model_3:
         self.model.optimize()
 
     def generate_decision_variables(self):
-        decision_variable_dict = {"x": {},
-                                  "y": {},
-                                  "z": {}}
+        decision_variable_dict = {"x": {},      # FLight arc decision variables
+                                  "y": {},      # Ground arc decision variables
+                                  "z": {}}      # All arc-request decision variables
 
         # -> Adding flight arc decision variables - x_f_k
         for flight_arc in self.TSN.flight_arc_lst:
@@ -157,7 +158,6 @@ class Model_3:
                     self.model.addConstr(constraint_l == h,
                                          name=f"Conservation_of_aircraft_flow-{t}-{airport_ref}-{k}")
 
-
     def add_conservation_of_request_flow_constraint(self, display_progress_bars=False):
         # ... per node
         for t, timestep in enumerate(self.TSN.network):     # ... per timestep
@@ -249,13 +249,14 @@ class Model_3:
         for r, request in self.TSN.data.request_dict.items():
             origin = f"{request['release_step']}-{request['airport_O']}"
             destination =  f"{request['due_step']}-{request['airport_D']}"
-            s = f"Arc: NS (id:{r}) - {origin}->{destination}" #TODO: not dynamic if changed in TNS arc object fix here
+            s = f"Arc: NS (id:{r}) - {origin}->{destination}" # TODO: not dynamic if changed in TNS arc object fix here
             PCr = request["penalty"] # MU/ton
             Wr = request["weight"] #ton
 
             objective_function += PCr*Wr*self.decision_variable_dict["z"][s][r]
 
         self.model.setObjective(objective_function, GRB.MINIMIZE)
+
 
 if __name__ == "__main__":
     # ======================================================================================================
@@ -265,3 +266,33 @@ if __name__ == "__main__":
     model = Model_3()
 
     print("\nModel compiled!!!")
+
+
+
+
+    c_code = {"AC_1":(1,0,0),
+              "AC_2":(0,0,1)}
+    results = model.model.getVars()
+    plt.figure()
+    plt.xticks(range(26))
+    idx2ref = [""]*6
+    for airport_ref, airport in model.TSN.data.airport_dict.items():
+        idx2ref[airport["index"]-1] = airport_ref
+    print(idx2ref)
+    plt.yticks(range(6),idx2ref)
+    for r in results:
+        if r.X != 0:
+            if r.varName[0] in ["x","y"]:
+                print(r.varName,r.X)
+                arc_name = r.varName[16:].split("->")
+                t = [0,0]
+                n = [0,0]
+                plane = arc_name[1].split("-")[-1]
+                for i in range(2):
+                    t[i] = int(arc_name[i].split("-")[0])
+                    n[i] = int(model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
+                plt.plot(t,n,color = c_code[plane])
+
+    plt.show()
+
+
