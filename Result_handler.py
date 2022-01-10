@@ -15,7 +15,7 @@ class Results():
         for t in timestep:
             time = t * 4
             h = int(time % 24)
-            d = int((time - h) / 24)
+            d = int((time - h) / 24 + 1)
             if h != 0:
                 tmp.append(f"{h}h")
             else:
