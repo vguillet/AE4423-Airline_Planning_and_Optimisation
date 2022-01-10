@@ -45,7 +45,7 @@ class Model_3:
         self.add_conservation_of_aircraft_flow_constraint(display_progress_bars)
         self.add_conservation_of_request_flow_constraint(display_progress_bars)
         self.add_weight_capacity_constraint(display_progress_bars)
-        self.add_net_aircraft_flow_constraint(display_progress_bars)
+        self.add_net_aircraft_flow_constraint(display_progress_bars) #not used
 
         # -> Add objective function
         self.add_objective_function(display_progress_bars)
@@ -215,7 +215,7 @@ class Model_3:
         n = len(self.TSN.data.airport_dict)
         depart_time = flight_arc.origin_timestep * self.TSN.data.timestep_duration
         h = depart_time % 24
-        d = (depart_time - h) / 24
+        d = (depart_time - h) / 24 + 1
         # print(f"time = {depart_time}, d = {d}, h = {h}")
         MCf = 0.05 * (i + j) / (2 * n - 1) + 0.15 * np.sin(2 * np.pi * h / 24) ** 2 + 0.005 * d  # MU/(km*ton)
         return MCf
