@@ -9,6 +9,10 @@ class Time_space_network:
         self.ground_arc_lst = []
         self.ns_arc_lst = []
 
+        # self.paths_dict = {"request paths": {},
+        #                    "paths": [],
+        #                    "paths containing flight arc": {}}
+
         self.data = Data_processor()
         timestep_count = int(self.data.planning_horizon/self.data.timestep_duration + 1)
 
@@ -20,6 +24,10 @@ class Time_space_network:
     @property
     def arc_lst(self):
         return self.flight_arc_lst + self.ground_arc_lst + self.ns_arc_lst
+
+    @property
+    def arc_lst_no_ns(self):
+        return self.flight_arc_lst + self.ground_arc_lst
 
     def add_timestep(self):
         # -> Creating timestep node layer
@@ -51,6 +59,18 @@ class Time_space_network:
 
             # -> Add arc to overall arc list
             self.ns_arc_lst.append(ns_arc)
+
+    # def get_paths_sets(self):
+    #
+    #     for request_id, request in self.data.request_dict.items():
+    #         start_node = self.network[request["release_step"]][request["airport_O"]]
+    #         end_node = self.network[request["due_step"]][request["airport_D"]]
+    #
+    #         self.paths_dict["request paths"][request_id] = []
+    #
+    #         # -> Solving for every possible path for the request
+    #         for step in range(end_node.timestep - start_node.timestep):
+    #             pass
 
 
 class Node:
