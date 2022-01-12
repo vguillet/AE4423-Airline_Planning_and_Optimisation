@@ -52,9 +52,14 @@ class Results():
                                 request_plot_dict[a] = weight
                             t = [arc.origin_timestep,arc.destination_timestep]
                             n = [self.model.TSN.data.airport_dict[arc.origin_airport]["index"] , self.model.TSN.data.airport_dict[arc.destination_airport]["index"]]
-                            plt.plot(t, n, linewidth=request_plot_dict[a] / 10, color=(0.3, 0.3, 0.3))
+                            plt.plot(t, n, linewidth=request_plot_dict[a] / 10, color=(0.3, 0.3, 0.3),zorder = 2)
                         else:
-                            plt.plot(arc.origin_timestep, self.model.TSN.data.airport_dict[arc.origin_airport]["index"], 'ro')
+                            if zpr.X:
+                                # plt.plot(arc.origin_timestep, self.model.TSN.data.airport_dict[arc.origin_airport]["index"], 'ro')
+                                plt.plot([arc.origin_timestep,arc.destination_timestep],
+                                         [self.model.TSN.data.airport_dict[arc.origin_airport]["index"],
+                                         self.model.TSN.data.airport_dict[arc.destination_airport]["index"]]
+                                         , color=(0,1,0), marker='o',markersize=2, linestyle='dashed', linewidth=1, zorder=1)
 
 
         for r in self.model.master.getVars():
@@ -68,7 +73,7 @@ class Results():
                     for i in range(2):
                         t[i] = int(arc_name[i].split("-")[0])
                         n[i] = int(self.model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
-                    plt.plot(t, n, color=c_code[plane], linestyle=":")
+                    plt.plot(t, n, color=c_code[plane], linestyle=":",zorder=3)
 
         if self.save:
             file_name = "Results_model_4"
