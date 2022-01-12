@@ -34,7 +34,7 @@ class Results():
         plt.yticks(range(7)[1:], idx2ref)
 
         request_plot_dict = {}
-        # for z[p][r]
+        # for every z_p_r
         for p, zp in results["z"].items():
             for r, zpr in zp.items():
                 if type(zpr) != int:
