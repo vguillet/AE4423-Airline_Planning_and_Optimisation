@@ -6,7 +6,7 @@ class Results():
         self.show = show
         self.save = save
         self.model = CG()
-        # self.print_stats()
+        self.print_stats()
         self.plot_graph()
 
     def timestep2day(self,timestep):
@@ -56,11 +56,10 @@ class Results():
                         else:
                             if zpr.X:
                                 # plt.plot(arc.origin_timestep, self.model.TSN.data.airport_dict[arc.origin_airport]["index"], 'ro')
-                                plt.plot([arc.origin_timestep,arc.destination_timestep],
+                                plt.plot([arc.origin_timestep, arc.destination_timestep],
                                          [self.model.TSN.data.airport_dict[arc.origin_airport]["index"],
-                                         self.model.TSN.data.airport_dict[arc.destination_airport]["index"]]
-                                         , color=(0,1,0), marker='o',markersize=2, linestyle='dashed', linewidth=1, zorder=1)
-
+                                         self.model.TSN.data.airport_dict[arc.destination_airport]["index"]],
+                                         color=(0, 1, 0), marker='o',markersize=2, linestyle='dashed', linewidth=1, zorder=1)
 
         for r in self.model.master.getVars():
             if r.X != 0:
@@ -96,44 +95,69 @@ class Results():
         packages_not_handled = []
         packages_not_handled_penalty = 0
 
-        results = self.model.model.getVars()
+        results = self.model.decision_variable_dict
 
-        for decision_variable in results:
-            if decision_variable.varName[0] in ["x", "y"] and int(decision_variable.x) == 1:
-                total_arc_used += 1
+        for p, zp in results["z"].items():
+            for r, zpr in zp.items():
+                if type(zpr) != int:
+                    path = self.model.path_dict["request paths"][r][p]
 
-                if decision_variable.varName[0] == "x":
-                    f_arc_used += 1
-                else:
-                    g_arc_used += 1
+                    for arc in path.arcs:
+                        if arc.type == "NS":
+                            NS_arc_used += 1 * zpr.X
 
-            if decision_variable.varName[0] == "z" and "NS" not in decision_variable.varName:
-                # print(decision_variable.varName, decision_variable.X)
-                package_id = int(decision_variable.varName.split("#")[-2])
+                        elif arc.type == "Ground":
+                            g_arc_used += 1
 
-                if package_id not in packages_handled and int(decision_variable.x) == 1:
-                    packages_handled.append(package_id)
+                        elif arc.type == "Flight":
+                            f_arc_used += 1
 
-            if decision_variable.varName[0] == "z" and "NS" in decision_variable.varName and int(
-                    decision_variable.x) == 1:
-                NS_arc_used += 1
+                        # a = arc.ref
+                        # if arc.type == "NS":
+                        #
+                        # elif:
 
-                package_id = int(decision_variable.varName.split("#")[-2])
-                if package_id not in packages_not_handled:
-                    packages_not_handled.append(package_id)
+        # results = self.model.model.getVars()
+        #
+        # for decision_variable in results:
+        #     if decision_variable.varName[0] in ["x", "y"] and int(decision_variable.x) == 1:
+        #         total_arc_used += 1
+        #
+        #         if decision_variable.varName[0] == "x":
+        #             f_arc_used += 1
+        #         else:
+        #             g_arc_used += 1
+        #
+        #     if decision_variable.varName[0] == "z" and "NS" not in decision_variable.varName:
+        #         # print(decision_variable.varName, decision_variable.X)
+        #         package_id = int(decision_variable.varName.split("#")[-2])
+        #
+        #         if package_id not in packages_handled and int(decision_variable.x) == 1:
+        #             packages_handled.append(package_id)
+        #
+        #     if decision_variable.varName[0] == "z" and "NS" in decision_variable.varName and int(
+        #             decision_variable.x) == 1:
+        #         NS_arc_used += 1
+        #
+        #         package_id = int(decision_variable.varName.split("#")[-2])
+        #         if package_id not in packages_not_handled:
+        #             packages_not_handled.append(package_id)
+        #
+        #             request = self.model.TSN.data.request_dict[package_id]
+        #
+        #             packages_not_handled_penalty += request["penalty"] * request["weight"]
 
-                    request = self.model.TSN.data.request_dict[package_id]
-
-                    packages_not_handled_penalty += request["penalty"] * request["weight"]
+        total_arc_used += f_arc_used + g_arc_used
 
         print(f"- Nb. arcs used: {total_arc_used}")
         print(f"   > Flight arcs: {f_arc_used}")
         print(f"   > Ground arcs: {g_arc_used}")
 
         print(f"- Nb. NS arcs used: {NS_arc_used}")
-        print(f"- Nb. packages handled: {len(packages_handled)}")
-        print(f"- Nb. packages not handled: {len(packages_not_handled)}")
+        print(f"- Nb. packages handled: {115-NS_arc_used}")
+        print(f"- Nb. packages not handled: {NS_arc_used}")
         print(f"- Total packages not handled penalty: {packages_not_handled_penalty}")
+
 
 if __name__ == '__main__':
     Results(show=False,save=True,max_time=3600)
