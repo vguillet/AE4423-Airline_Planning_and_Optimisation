@@ -1,12 +1,16 @@
 from Model_generator_3 import Model_3
 from matplotlib import pyplot as plt
+import time
 import plotly.graph_objects as go
 
 class Results():
     def __init__(self,show=False,save=True,max_time=3600):
         self.show = show
         self.save = save
+        start_time = time.time()
         self.model = Model_3(max_time=max_time) # 2 hours
+        self.run_time = time.time()-start_time
+        print(f"\nruntime: {round(self.run_time,3)} seconds")
         self.print_stats()
         self.plot_graph()
 
@@ -36,7 +40,6 @@ class Results():
         plt.yticks(range(7)[1:], idx2ref)
 
         z_dict = {}
-        NSs= []
         for r in results:
             if r.X != 0:
                 if r.varName[0] == "z":
@@ -60,7 +63,13 @@ class Results():
                         # print(varName_list)
                         # arc_name = varName_list[0] + '-' + varName_list[1] + '->' + varName_list[2] + '-' + varName_list[3]
                         # ID = int(varName_list[-1].replace("#", ''))
-                        plt.plot(varName_list[0],model.TSN.data.airport_dict[varName_list[1]]["index"],'ro')
+                        print(varName_list)
+                        # plt.plot(varName_list[0],model.TSN.data.airport_dict[varName_list[1]]["index"], color=(0, 0.8, 0), marker='o',markersize=4)
+                        plt.plot([varName_list[0], varName_list[2]],
+                                 [model.TSN.data.airport_dict[varName_list[1]]["index"],
+                                  model.TSN.data.airport_dict[varName_list[3]]["index"]]
+                                 , color=(0, 0.8, 0), marker='o', markersize=3, linestyle='dashed', linewidth=1, zorder=1)
+
         for arc_name, weight in z_dict.items():
             arc_name = arc_name.split("->")
             t = [0, 0]
@@ -68,7 +77,7 @@ class Results():
             for i in range(2):
                 t[i] = int(arc_name[i].split("-")[0])
                 n[i] = int(model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
-            plt.plot(t, n, linewidth=weight/10, color=(0.3, 0.3, 0.3))
+            plt.plot(t, n, linewidth=weight/10, color=(0.3, 0.3, 0.3), zorder=2)
 
         for r in results:
             if r.X != 0:
@@ -81,7 +90,7 @@ class Results():
                     for i in range(2):
                         t[i] = int(arc_name[i].split("-")[0])
                         n[i] = int(model.TSN.data.airport_dict[arc_name[i].split("-")[1]]["index"])
-                    plt.plot(t, n, color=c_code[plane], linestyle=":")
+                    plt.plot(t, n, color=c_code[plane], linestyle=":", zorder = 3)
         if self.save:
             file_name = "Results_model_3"
             plt.savefig(f"{file_name}.png")

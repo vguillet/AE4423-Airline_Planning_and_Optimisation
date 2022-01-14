@@ -1,11 +1,15 @@
 from Collum_generation import CG
 from matplotlib import pyplot as plt
+import time
 
 class Results():
     def __init__(self,show=False,save=True,max_time=3600):
         self.show = show
         self.save = save
+        start_time = time.time()
         self.model = CG()
+        self.run_time = time.time()-start_time
+        print(f"\nruntime: {round(self.run_time,3)} seconds")
         # self.print_stats()
         self.plot_graph()
 
@@ -59,7 +63,8 @@ class Results():
                                 plt.plot([arc.origin_timestep,arc.destination_timestep],
                                          [self.model.TSN.data.airport_dict[arc.origin_airport]["index"],
                                          self.model.TSN.data.airport_dict[arc.destination_airport]["index"]]
-                                         , color=(0,1,0), marker='o',markersize=2, linestyle='dashed', linewidth=1, zorder=1)
+                                         , color=(0, 0.8, 0), marker='o', markersize=3, linestyle='dashed', linewidth=1,
+                                         zorder=1)
 
 
         for r in self.model.master.getVars():
