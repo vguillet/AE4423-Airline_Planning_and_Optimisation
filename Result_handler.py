@@ -1,7 +1,6 @@
 from Model_generator_3 import Model_3
 from matplotlib import pyplot as plt
 import time
-import plotly.graph_objects as go
 
 class Results():
     def __init__(self,show=False,save=True,max_time=3600):
@@ -15,6 +14,7 @@ class Results():
         self.plot_graph()
 
     def timestep2day(self,timestep):
+        '''converts the time step into a string with hour and day number for plotting'''
         tmp = []
         for t in timestep:
             time = t * 4
@@ -27,6 +27,7 @@ class Results():
         return tmp
 
     def plot_graph(self):
+        '''plots and saves the graph that represents the model'''
         model = self.model
         c_code = {"AC_1": (1, 0, 0),
                   "AC_2": (0, 0, 1)}
@@ -99,6 +100,7 @@ class Results():
             plt.show()
 
     def print_stats(self):
+        '''prints the stats of the model'''
         # =========================================================== Generate data
         # -> Arc used (non-NS)
         total_arc_used = 0

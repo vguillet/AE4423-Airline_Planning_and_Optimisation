@@ -16,6 +16,7 @@ class Results():
         self.plot_graph()
 
     def timestep2day(self,timestep):
+        '''converts the time step into a string with hour and day number for plotting'''
         tmp = []
         for t in timestep:
             time = t * 4
@@ -28,6 +29,7 @@ class Results():
         return tmp
 
     def plot_graph(self):
+        '''plots and saves the graph that represents the model'''
         c_code = {"AC_1": (1, 0, 0),
                   "AC_2": (0, 0, 1)}
         results = self.model.decision_variable_dict
@@ -88,6 +90,7 @@ class Results():
             plt.show()
 
     def print_stats(self):
+        '''prints the stats of the model'''
         # =========================================================== Generate data
         # -> Arc used (non-NS)
         total_arc_used = 0
@@ -139,7 +142,6 @@ class Results():
         print(f"- Nb. packages handled: {115-NS_arc_used}")
         print(f"- Nb. packages not handled: {NS_arc_used}")
         print(f"- Total packages not handled penalty: {packages_not_handled_penalty}")
-
 
 if __name__ == '__main__':
     Results(show=False,save=True,max_time=3600)

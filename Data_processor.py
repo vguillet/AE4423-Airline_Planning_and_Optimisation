@@ -27,7 +27,10 @@ class Data_processor:
     max_arc_time : int
 
     def __init__(self):
-        self.make_input_data_frames()
+        try:
+            self.make_input_data_frames("G10/") # if files are in a folder  G10
+        except:
+            self.make_input_data_frames("") # if they are in the same directory
         self.timestep_duration = 4 # hours
         self.planning_horizon = 96 # TODO: take from here in netwerk gereration
 
@@ -38,13 +41,11 @@ class Data_processor:
         self.create_aircraft_dict()
         self.create_duration_df()
 
-    def make_input_data_frames(self):
+    def make_input_data_frames(self,dir):
         """
         The given excel files will be put into Dataframes.
         """
 
-        dir = "G10/" # use this as dir if the exel files are stored in a sperate directory
-        dir = ''
         file_name = f"{dir}airports_input_data.xlsx"
         self.airport_input_df = pd.read_excel(file_name)
 
