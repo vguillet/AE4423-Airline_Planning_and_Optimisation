@@ -43,17 +43,18 @@ class Data_processor:
         The given excel files will be put into Dataframes.
         """
 
-        dir = "G10"
-        file_name = f"{dir}/airports_input_data.xlsx"
+        dir = "G10/" # use this as dir if the exel files are stored in a sperate directory
+        dir = ''
+        file_name = f"{dir}airports_input_data.xlsx"
         self.airport_input_df = pd.read_excel(file_name)
 
         # file_name = f"{dir}/fleet_initial_final_position_input_data.xlsx"
         # self.fleet_initial_final_position_input_df = pd.read_excel(file_name)
 
-        file_name = f"{dir}/OD_pairs_input_data.xlsx"
+        file_name = f"{dir}OD_pairs_input_data.xlsx"
         self.OD_pairs_input_df = pd.read_excel(file_name)
 
-        file_name = f"{dir}/requests_input_data.xlsx"
+        file_name = f"{dir}requests_input_data.xlsx"
         self.request_input_df = pd.read_excel(file_name)
 
     def create_initial_final_aircrafts_dict(self):

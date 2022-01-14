@@ -63,7 +63,7 @@ class Results():
                         # print(varName_list)
                         # arc_name = varName_list[0] + '-' + varName_list[1] + '->' + varName_list[2] + '-' + varName_list[3]
                         # ID = int(varName_list[-1].replace("#", ''))
-                        print(varName_list)
+                        # print(varName_list)
                         # plt.plot(varName_list[0],model.TSN.data.airport_dict[varName_list[1]]["index"], color=(0, 0.8, 0), marker='o',markersize=4)
                         plt.plot([varName_list[0], varName_list[2]],
                                  [model.TSN.data.airport_dict[varName_list[1]]["index"],
@@ -103,6 +103,7 @@ class Results():
         # -> Arc used (non-NS)
         total_arc_used = 0
         f_arc_used = 0
+        t_f = 0
         g_arc_used = 0
 
         # -> NS arcs used
@@ -120,6 +121,9 @@ class Results():
 
                 if decision_variable.varName[0] == "x":
                     f_arc_used += 1
+                    name_list = decision_variable.varName.split('->')
+                    # print(name_list)
+                    t_f += self.model.TSN.data.duration_df.loc[name_list[0][-3:], name_list[1].split('-')[1]]
                 else:
                     g_arc_used += 1
 
@@ -145,6 +149,7 @@ class Results():
         print(f"- Nb. arcs used: {total_arc_used}")
         print(f"   > Flight arcs: {f_arc_used}")
         print(f"   > Ground arcs: {g_arc_used}")
+        print(f"   > Airtime percentage: {round(t_f/(t_f+g_arc_used*4)*100)}%")
 
         print(f"- Nb. NS arcs used: {NS_arc_used}")
         print(f"- Nb. packages handled: {len(packages_handled)}")

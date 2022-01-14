@@ -112,17 +112,28 @@ class Results():
                         if arc.type == "NS":
                             NS_arc_used += 1 * zpr.X
 
-                        elif arc.type == "Ground":
-                            g_arc_used += 1
+                        # elif arc.type == "Ground":
+                        #     g_arc_used += 1
+                        #
+                        # elif arc.type == "Flight":
+                        #     f_arc_used += 1
 
-                        elif arc.type == "Flight":
-                            f_arc_used += 1
+        # ... per request
+        for r, request in self.model.TSN.data.request_dict.items():
+            # ... find Pns
+            for p, path in self.model.path_dict["request paths"][r].items():
+                if path.type == "NS":
+
+                    PCr = request["penalty"]  # MU/ton
+                    Wr = request["weight"] # ton
+                    if type(self.model.decision_variable_dict["z"][p][r]) != int:
+                        packages_not_handled_penalty += PCr * Wr * self.model.decision_variable_dict["z"][p][r].x
 
         total_arc_used += f_arc_used + g_arc_used
 
-        print(f"- Nb. arcs used: {total_arc_used}")
-        print(f"   > Flight arcs: {f_arc_used}")
-        print(f"   > Ground arcs: {g_arc_used}")
+        # print(f"- Nb. arcs used: {total_arc_used}")
+        # print(f"   > Flight arcs: {f_arc_used}")
+        # print(f"   > Ground arcs: {g_arc_used}")
 
         print(f"- Nb. NS arcs used: {NS_arc_used}")
         print(f"- Nb. packages handled: {115-NS_arc_used}")
